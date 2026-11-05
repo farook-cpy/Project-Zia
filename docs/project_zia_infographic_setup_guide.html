@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project Zia // Infographic Architecture & Setup Guide</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 12mm 14mm 12mm;
+      @bottom-left {
+        content: "Project Zia // Local-First Ambient Home OS";
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 7.5pt;
+        color: #64748b;
+      }
+      @bottom-right {
+        content: "Page " counter(page);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 7.5pt;
+        font-weight: 700;
+        color: #0284c7;
+      }
+    }
+
+    *, *:before, *:after {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 9.5pt;
+      line-height: 1.45;
+      color: #0f172a;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .page {
+      page-break-after: always;
+      position: relative;
+    }
+
+    .page-break {
+      page-break-before: always;
+      break-before: page;
+    }
+
+    /* Typography & Accents */
+    h1, h2, h3, h4 {
+      color: #0f172a;
+      font-weight: 700;
+      margin-top: 0;
+      letter-spacing: -0.02em;
+    }
+
+    /* Top Hero Infographic Header */
+    .hero-banner {
+      background: linear-gradient(135deg, #090d16 0%, #0f172a 60%, #1e293b 100%);
+      border-radius: 10px;
+      padding: 22px 24px;
+      color: #ffffff;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #1e293b;
+      border-left: 6px solid #38bdf8;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      margin-bottom: 16px;
+    }
+
+    .hero-tags {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill-tag {
+      font-family: "SF Mono", "Consolas", monospace;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .pill-tag.green {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .pill-tag.amber {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .hero-title {
+      font-size: 20pt;
+      font-weight: 800;
+      margin: 4px 0 6px 0;
+      background: linear-gradient(90deg, #ffffff 0%, #e2e8f0 70%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 9.5pt;
+      color: #94a3b8;
+      margin: 0;
+      line-height: 1.4;
+      max-width: 95%;
+    }
+
+    /* Section Headers */
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0 10px 0;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+
+    .section-num {
+      background: #0284c7;
+      color: #ffffff;
+      font-size: 8.5pt;
+      font-weight: 800;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .section-title {
+      font-size: 12pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    /* Visual Architecture Blueprint */
+    .blueprint-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .node-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      position: relative;
+    }
+
+    .node-card.server-node {
+      grid-column: span 2;
+      background: #0f172a;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      border-left: 5px solid #0284c7;
+    }
+
+    .node-card.server-node h3 {
+      color: #ffffff;
+      font-size: 11pt;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .node-badge {
+      font-size: 7.5pt;
+      background: #0284c7;
+      color: #ffffff;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .server-specs-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .spec-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 8px;
+      border-radius: 5px;
+      font-size: 8pt;
+    }
+
+    .spec-label {
+      color: #94a3b8;
+      font-size: 7pt;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .spec-val {
+      color: #38bdf8;
+      font-weight: 700;
+      font-size: 8.5pt;
+    }
+
+    /* Sub-cards for client endpoints */
+    .endpoint-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 10px 12px;
+      background: #ffffff;
+      border-top: 3px solid #0284c7;
+    }
+
+    .endpoint-card.green {
+      border-top-color: #10b981;
+    }
+
+    .endpoint-card.purple {
+      border-top-color: #8b5cf6;
+    }
+
+    .endpoint-card.amber {
+      border-top-color: #f59e0b;
+    }
+
+    .endpoint-title {
+      font-weight: 700;
+      font-size: 9.5pt;
+      margin-bottom: 3px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .endpoint-protocol {
+      font-family: monospace;
+      font-size: 7pt;
+      background: #f1f5f9;
+      padding: 2px 5px;
+      border-radius: 3px;
+      color: #475569;
+    }
+
+    .endpoint-desc {
+      font-size: 8.5pt;
+      color: #64748b;
+      margin: 0;
+    }
+
+    /* Step Cards Grid */
+    .steps-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .step-card {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .step-badge-col {
+      background: #f1f5f9;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 11pt;
+      color: #0284c7;
+    }
+
+    .step-content {
+      padding: 10px 14px;
+    }
+
+    .step-header {
+      font-weight: 700;
+      font-size: 9.5pt;
+      color: #0f172a;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .step-tag {
+      font-size: 7pt;
+      font-family: monospace;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-weight: 600;
+    }
+
+    .step-body {
+      font-size: 8.5pt;
+      color: #475569;
+      margin: 0 0 6px 0;
+      line-height: 1.4;
+    }
+
+    .code-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: "SF Mono", "Consolas", monospace;
+      font-size: 7.5pt;
+      padding: 7px 10px;
+      border-radius: 5px;
+      margin-top: 4px;
+      border: 1px solid #1e293b;
+      overflow-x: auto;
+    }
+
+    .code-cmd {
+      color: #38bdf8;
+    }
+
+    .code-comment {
+      color: #64748b;
+    }
+
+    /* Callout Alert Boxes */
+    .callout {
+      border-radius: 6px;
+      padding: 9px 12px;
+      margin: 8px 0;
+      font-size: 8.5pt;
+      line-height: 1.4;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .callout.info {
+      background: #f0f9ff;
+      border-left: 4px solid #0284c7;
+      color: #0369a1;
+    }
+
+    .callout.tip {
+      background: #f0fdf4;
+      border-left: 4px solid #16a34a;
+      color: #15803d;
+    }
+
+    .callout.warning {
+      background: #fffbeb;
+      border-left: 4px solid #d97706;
+      color: #b45309;
+    }
+
+    .callout-icon {
+      font-size: 11pt;
+      line-height: 1;
+    }
+
+    /* Visual Spectrum / UI Modes */
+    .spectrum-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .spectrum-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .spectrum-icon {
+      font-size: 16pt;
+      margin-bottom: 4px;
+    }
+
+    .spectrum-name {
+      font-weight: 700;
+      font-size: 9pt;
+      color: #0f172a;
+    }
+
+    .spectrum-stat {
+      font-size: 7.5pt;
+      font-weight: 700;
+      color: #16a34a;
+      margin: 2px 0 4px 0;
+    }
+
+    .spectrum-desc {
+      font-size: 7.5pt;
+      color: #64748b;
+      line-height: 1.35;
+      margin: 0;
+    }
+
+    /* Quick Reference Cheatsheet Table */
+    .table-container {
+      margin-top: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8pt;
+      text-align: left;
+    }
+
+    thead {
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    th {
+      padding: 7px 10px;
+      font-weight: 600;
+      font-size: 7.5pt;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    td {
+      padding: 6px 10px;
+      color: #334155;
+    }
+
+    td.code-cell {
+      font-family: monospace;
+      font-size: 7.5pt;
+      color: #0284c7;
+      font-weight: 600;
+    }
+
+    .badge-fast {
+      background: #dcfce7;
+      color: #15803d;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 7pt;
+    }
+
+    .badge-llm {
+      background: #e0f2fe;
+      color: #0369a1;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 7pt;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===================================================================== -->
+  <!-- PAGE 1: INFOGRAPHIC BLUEPRINT & ASYMMETRIC ARCHITECTURE               -->
+  <!-- ===================================================================== -->
+  <div class="page">
+    
+    <!-- Hero Banner -->
+    <div class="hero-banner">
+      <div class="hero-tags">
+        <span class="pill-tag">PROJECT ZIA // OS</span>
+        <span class="pill-tag green">100% LOCAL-FIRST</span>
+        <span class="pill-tag amber">SNAPDRAGON 888 NODE</span>
+        <span class="pill-tag">0% CLOUD STORAGE</span>
+      </div>
+      <h1 class="hero-title">Project Zia: Ambient Home OS</h1>
+      <p class="hero-subtitle">
+        High-efficiency 24/7 autonomous AI companion system powered by a headless Sony Xperia 1 III server node, 
+        controlling local IoT relays, LifeDesk SQLite databases, wireless ADB intent bridges, and multi-mode client visualizers.
+      </p>
+    </div>
+
+    <!-- Section 1: Architecture Blueprint -->
+    <div class="section-title-wrap">
+      <span class="section-num">1</span>
+      <h2 class="section-title">Hardware Blueprint & Asymmetric Edge Topology</h2>
+    </div>
+
+    <div class="blueprint-grid">
+      
+      <!-- Central Xperia Server Node -->
+      <div class="node-card server-node">
+        <h3>
+          <span>Central Server Node: Sony Xperia 1 III</span>
+          <span class="node-badge">24/7 Headless Daemon</span>
+        </h3>
+        <p style="font-size: 8.5pt; color: #cbd5e1; margin: 0 0 8px 0;">
+          Acts as the 100% heavy-lifting edge server running inside Android Termux with persistent <code>termux-wake-lock</code>. 
+          Manages Gemini Flash router, subagent pool, local STT/TTS speech loops, and all SQLite bridges.
+        </p>
+        <div class="server-specs-grid">
+          <div class="spec-item">
+            <div class="spec-label">Processor</div>
+            <div class="spec-val">Snapdragon 888</div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">System RAM</div>
+            <div class="spec-val">12 GB LPDDR5</div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Subagents Cap</div>
+            <div class="spec-val">&le; 2 Workers</div>
+          </div>
+          <div class="spec-item">
+            <div class="spec-label">Endpoints</div>
+            <div class="spec-val">0.0.0.0:5000 / 8765</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Endpoint 1: MacBook Pro Client -->
+      <div class="endpoint-card">
+        <div class="endpoint-title">
+          <span>MacBook Pro / PC Client</span>
+          <span class="endpoint-protocol">JSON-RPC 2.0</span>
+        </div>
+        <p class="endpoint-desc">
+          Zero-VRAM interface running pure terminal REPL (<code>cli.py</code>) or minimal animated grey eye UI. 
+          Executes system-level commands, screen locks, and volume triggers remotely.
+        </p>
+      </div>
+
+      <!-- Endpoint 2: Android Projector -->
+      <div class="endpoint-card green">
+        <div class="endpoint-title">
+          <span>Android Bedroom Projector</span>
+          <span class="endpoint-protocol">Wireless ADB :5555</span>
+        </div>
+        <p class="endpoint-desc">
+          Automated media streaming bridge. Zia issues remote Android intents directly over Wi-Fi 
+          to launch browser sessions pointing to <code>miruro.tv</code> without touching the remote.
+        </p>
+      </div>
+
+      <!-- Endpoint 3: Android Family Tablet -->
+      <div class="endpoint-card purple">
+        <div class="endpoint-title">
+          <span>Android Family Tablet</span>
+          <span class="endpoint-protocol">ADB VoIP Intent</span>
+        </div>
+        <p class="endpoint-desc">
+          Hands-free family communications station. Dispatches wake intents (<code>KEYCODE_WAKEUP 224</code>) 
+          and launches Botim VoIP call intents on voice demand.
+        </div>
+
+      <!-- Endpoint 4: Family Samsung Phones -->
+      <div class="endpoint-card amber">
+        <div class="endpoint-title">
+          <span>Family Samsung Phones</span>
+          <span class="endpoint-protocol">Local Webhook Sink</span>
+        </div>
+        <p class="endpoint-desc">
+          Automated background notification queue. Captures forwarded SMS and banking verifications, 
+          extracting 4-8 digit OTP codes locally with zero cloud exposure.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Section 2: Visual Interface Spectrum -->
+    <div class="section-title-wrap">
+      <span class="section-num">2</span>
+      <h2 class="section-title">Tri-Tier Visual Interface Spectrum</h2>
+    </div>
+
+    <div class="spectrum-grid">
+      <div class="spectrum-card">
+        <div class="spectrum-icon">&#128065;</div>
+        <div class="spectrum-name">Minimalist Grey UI</div>
+        <div class="spectrum-stat">0% VRAM | &lt;15MB RAM</div>
+        <p class="spectrum-desc">
+          Interactive HTML/CSS animated eyes with mouse cursor tracking, natural double-blinking, and hysteresis audio waveform mouth.
+        </p>
+      </div>
+
+      <div class="spectrum-card">
+        <div class="spectrum-icon">&#127800;</div>
+        <div class="spectrum-name">Anime Sprite Companion</div>
+        <div class="spectrum-stat">0% VRAM | Active on Minimize</div>
+        <p class="spectrum-desc">
+          Shoulder-level transparent cel-shaded desktop pet with 21 frames, 8 distinct emotion poses, and organic multi-frequency breathing.
+        </p>
+      </div>
+
+      <div class="spectrum-card">
+        <div class="spectrum-icon">&#9889;</div>
+        <div class="spectrum-name">Live2D Cubism WebGL</div>
+        <div class="spectrum-stat">Loaded Strictly On Demand</div>
+        <p class="spectrum-desc">
+          Full 4K WebGL avatar summoned via <code>"load avatar"</code> and completely unloaded via <code>"stop avatar"</code> to reclaim 100% GPU memory.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">&#10004;</span>
+      <div>
+        <strong>Asymmetric Resource Efficiency:</strong> All heavy computing (local Vosk STT, neural Edge-TTS synthesis, 
+        LifeDesk SQLite aggregation, and Telegram gateway) runs strictly on the Xperia phone server. Client devices run at <strong>&lt;0.5% CPU load</strong>.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- PAGE 2: 5-STEP INSTALLATION & DEPLOYMENT WALKTHROUGH                  -->
+  <!-- ===================================================================== -->
+  <div class="page page-break">
+    
+    <div class="section-title-wrap">
+      <span class="section-num">3</span>
+      <h2 class="section-title">Step-by-Step Installation & Deployment Flow</h2>
+    </div>
+
+    <div class="steps-container">
+
+      <!-- Step 1 -->
+      <div class="step-card">
+        <div class="step-badge-col">01</div>
+        <div class="step-content">
+          <div class="step-header">
+            <span>Preparing the Sony Xperia 1 III Server Node</span>
+            <span class="step-tag">Termux / Android</span>
+          </div>
+          <p class="step-body">
+            Install Termux and Termux:API from F-Droid. Enable persistent wake-lock to prevent Snapdragon 888 deep sleep, 
+            and set Sony Battery Care limit to 80% to preserve battery lifespan during 24/7 plugged operation.
+          </p>
+          <div class="code-box">
+            <span class="code-cmd">termux-wake-lock</span><br>
+            <span class="code-cmd">pkg update && pkg install python git termux-api sqlite clang</span><br>
+            <span class="code-cmd">git clone https://github.com/your-repo/project-zia.git && cd project-zia</span><br>
+            <span class="code-cmd">pip install -r requirements.txt && python server.py</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step-card">
+        <div class="step-badge-col">02</div>
+        <div class="step-content">
+          <div class="step-header">
+            <span>Linking LifeDesk SQLite Database (Habits & Finance)</span>
+            <span class="step-tag">Local Database</span>
+          </div>
+          <p class="step-body">
+            Connect Zia's backend directly to your existing LifeDesk SQLite databases (<code>habits.db</code> and <code>finance.db</code>). 
+            Enables sub-millisecond, zero-cloud natural language habit logging and expense aggregation.
+          </p>
+          <div class="code-box">
+            <span class="code-comment"># Place existing databases in data/lifedesk/ or point .env path</span><br>
+            <span class="code-cmd">LIFEDESK_HABITS_PATH=data/lifedesk/habits.db</span><br>
+            <span class="code-cmd">LIFEDESK_FINANCE_PATH=data/lifedesk/finance.db</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-card">
+        <div class="step-badge-col">03</div>
+        <div class="step-content">
+          <div class="step-header">
+            <span>Connecting Smart Home IoT & Wireless ADB Bridges</span>
+            <span class="step-tag">ESP8266 / ADB</span>
+          </div>
+          <p class="step-body">
+            Configure local IP addresses for your ESP8266/NodeMCU relays (Tasmota/Shelly/WLED) and authorize wireless ADB pairing 
+            (port 5555) on your bedroom Android projector and family tablet.
+          </p>
+          <div class="code-box">
+            <span class="code-cmd">adb connect 192.168.1.65:5555</span> <span class="code-comment"># Android Projector</span><br>
+            <span class="code-cmd">adb connect 192.168.1.75:5555</span> <span class="code-comment"># Android Tablet</span><br>
+            <span class="code-cmd">IOT_DEVICE_IP=192.168.1.50</span> <span class="code-comment"># ESP8266 Desk Lamp Relay</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step-card">
+        <div class="step-badge-col">04</div>
+        <div class="step-content">
+          <div class="step-header">
+            <span>Remote Telegram Gateway & Neural TTS Voice Notes</span>
+            <span class="step-tag">Away-From-Home</span>
+          </div>
+          <p class="step-body">
+            When away from your local Wi-Fi, the bi-directional Telegram gateway allows you to send commands, query prayer schedules, 
+            and receive neural Edge-TTS voice note responses directly inside your personal Telegram chat.
+          </p>
+          <div class="code-box">
+            <span class="code-cmd">TELEGRAM_BOT_TOKEN="your_bot_token"</span><br>
+            <span class="code-cmd">TELEGRAM_ALLOWED_USER_ID="your_telegram_id"</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step-card">
+        <div class="step-badge-col">05</div>
+        <div class="step-content">
+          <div class="step-header">
+            <span>Agent-Browser CDP Automation & Family OTP Sink</span>
+            <span class="step-tag">Web Automation</span>
+          </div>
+          <p class="step-body">
+            Enables token-efficient accessibility tree parsing (<code>@e1</code>, <code>@e2</code> tokens under 50 tokens) for web actions, 
+            and opens a secure local webhook (<code>POST /api/webhook/notification</code>) to capture family OTPs automatically.
+          </p>
+          <div class="code-box">
+            <span class="code-comment"># Query latest OTP via voice or terminal:</span><br>
+            <span class="code-cmd">zia&gt; what is the latest otp</span><br>
+            <span class="code-comment"># "Latest OTP is 849201 from VK-SBIINB (12s ago)."</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout warning">
+      <span class="callout-icon">&#9888;</span>
+      <div>
+        <strong>Thermal & Memory Sentinel:</strong> Always keep subagent concurrency capped strictly to 
+        <code>max_workers=2</code> in <code>engine/subagents.py</code> to prevent thermal throttling on the Snapdragon 888 chip.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- PAGE 3: VOICE COMMAND CHEATSHEET & RUNTIME ROUTING TABLE              -->
+  <!-- ===================================================================== -->
+  <div class="page page-break">
+    
+    <div class="section-title-wrap">
+      <span class="section-num">4</span>
+      <h2 class="section-title">Natural Voice & Text Command Cheatsheet</h2>
+    </div>
+
+    <p style="font-size: 8.5pt; color: #64748b; margin-top: 0;">
+      All queries matching local command patterns bypass the cloud LLM entirely, executing in sub-5ms with <strong>0 tokens consumed</strong>. 
+      Complex queries seamlessly route to Gemini Flash with persistent memory context.
+    </p>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 28%;">Spoken Query / Voice Command</th>
+            <th style="width: 22%;">Target Subsystem</th>
+            <th style="width: 36%;">Action Performed & Hardware Bridge</th>
+            <th style="width: 14%;">Tokens</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="code-cell">"Turn on the desk light"</td>
+            <td>Local IoT Relay</td>
+            <td>Dispatches HTTP GET to ESP8266 relay node (Tasmota/Shelly).</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"Play Black Clover on projector"</td>
+            <td>Android Projector</td>
+            <td>Fires wireless ADB intent to stream <code>miruro.tv</code> over Wi-Fi.</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"Call Dad on Botim on my tab"</td>
+            <td>Android Tablet</td>
+            <td>Sends wake event and triggers Botim VoIP calling intent.</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"Mark workout and reading done"</td>
+            <td>LifeDesk Habits</td>
+            <td>Updates <code>habits.db</code>, calculates daily streak & milestones.</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"Log 150 rupees for lunch"</td>
+            <td>LifeDesk Finance</td>
+            <td>Appends transaction to <code>finance.db</code> under category 'food'.</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"What is the latest OTP?"</td>
+            <td>Family Notification Sink</td>
+            <td>Pulls recent SMS OTP forwarded from Samsung phone queue.</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"Next prayer time"</td>
+            <td>Palakkad Astronomical</td>
+            <td>Calculates exact prayer countdown (Lat: 10.7867° N, Long: 76.6548° E).</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"Set timer for 15 minutes"</td>
+            <td>Alarm Scheduler</td>
+            <td>Enqueues countdown timer with audio chime alerts.</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"Load avatar" / "Stop avatar"</td>
+            <td>Dual-Mode Visualizer</td>
+            <td>Mounts 4K Live2D WebGL or unloads instantly to 0% VRAM.</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"Check train schedule to CBE"</td>
+            <td>Agent-Browser A11y</td>
+            <td>Captures compact accessibility tree snapshot of live schedule.</td>
+            <td><span class="badge-fast">0 TOKENS</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"How should I structure my day?"</td>
+            <td>Gemini Flash Brain</td>
+            <td>Generates natural response with persistent LifeDesk & milestone memory.</td>
+            <td><span class="badge-llm">LLM TOKEN</span></td>
+          </tr>
+          <tr>
+            <td class="code-cell">"What's on my screen right now?"</td>
+            <td>Multimodal Vision</td>
+            <td>Captures active desktop window and analyzes error/code via Gemini.</td>
+            <td><span class="badge-llm">LLM TOKEN</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 5: Troubleshooting & Quick Diagnostics -->
+    <div class="section-title-wrap" style="margin-top: 18px;">
+      <span class="section-num">5</span>
+      <h2 class="section-title">Health Check & Diagnostic Commands</h2>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div class="callout info" style="margin: 0;">
+        <span class="callout-icon">&#128269;</span>
+        <div>
+          <strong>Run Full Test Suite:</strong><br>
+          <code>python tests/ultimate_test_suite.py</code><br>
+          Validates all 64 subroutines across cross-OS engine & bridges.
+        </div>
+      </div>
+
+      <div class="callout info" style="margin: 0;">
+        <span class="callout-icon">&#9881;</span>
+        <div>
+          <strong>Xperia Node Readiness:</strong><br>
+          <code>python tests/test_xperia_node_ready.py</code><br>
+          Tests live Gemini LLM latency, dynamic <code>.env</code> reload & endpoints.
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 25px; font-size: 7.5pt; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+      Project Zia // Lead Systems Architect & Principal Engineer Documentation.<br>
+      Local-First Autonomous Artificial Intelligence Node. Palakkad, Kerala.
+    </p>
+
+  </div>
+
+</body>
+</html>
