@@ -1,0 +1,21 @@
+{
+  "deploy": [
+    "git status",
+    "git diff",
+    "pytest tests/"
+  ],
+  "sleep": [
+    "mac mute",
+    "mac screen off",
+    "theme amber"
+  ],
+  "focus": [
+    "theme amber",
+    "focus start"
+  ],
+  "status": [
+    "battery",
+    "prayer",
+    "uptime"
+  ]
+}

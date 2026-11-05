@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Zia</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app-container">
+
+    <!-- Center Stage: Minimalist Expressive Avatar -->
+    <main class="visual-stage">
+      <!-- 1. Default Minimal Mode: Expressive Clean Grey Eyes & Audio Mouth -->
+      <div class="minimal-container" id="minimal-stage">
+        
+        <!-- Expressive Face Container (Tracks mouse, reacts to clicks) -->
+        <div class="avatar-face cyber-face mood-f1" id="avatar-face">
+          <!-- Left Eye -->
+          <div class="avatar-eye eye-left" id="eye-left">
+            <div class="eyelid-top" id="eyelid-top-left"></div>
+            <div class="avatar-pupil" id="pupil-left">
+              <div class="pupil-glint glint-primary"></div>
+              <div class="pupil-glint glint-secondary"></div>
+            </div>
+            <div class="eyelid-bottom" id="eyelid-bottom-left"></div>
+          </div>
+
+          <!-- Right Eye -->
+          <div class="avatar-eye eye-right" id="eye-right">
+            <div class="eyelid-top" id="eyelid-top-right"></div>
+            <div class="avatar-pupil" id="pupil-right">
+              <div class="pupil-glint glint-primary"></div>
+              <div class="pupil-glint glint-secondary"></div>
+            </div>
+            <div class="eyelid-bottom" id="eyelid-bottom-right"></div>
+          </div>
+        </div>
+
+        <!-- Expressive Animated Mouth & Waveform -->
+        <div class="mouth-container" id="mouth-container">
+          <canvas id="mouth-waveform-canvas" class="mouth-canvas" width="220" height="42"></canvas>
+        </div>
+
+      </div>
+
+      <!-- 2. Dynamic Live2D Stage (Loaded on demand, 0 VRAM when off) -->
+      <div class="live2d-stage" id="live2d-stage">
+        <canvas id="live2d-canvas"></canvas>
+      </div>
+
+      <!-- 3. Anime PNG Sprite Avatar Mode (Active when window is minimised or on-demand) -->
+      <div class="anime-sprite-stage hidden" id="anime-sprite-stage">
+        <div class="anime-sprite-wrapper" id="anime-sprite-wrapper">
+          <div class="anime-speech-bubble" id="anime-speech-bubble">
+            <span id="anime-speech-text">Hey there!</span>
+          </div>
+          <img id="anime-sprite-img" class="anime-sprite-img" src="/assets/sprites/zia_anime/idle_open.png" alt="Zia Anime Girl">
+        </div>
+      </div>
+
+      <!-- Clean Minimal Floating Dialogue Subtitle -->
+      <div class="floating-subtitle" id="subtitle-box">
+        <span class="subtitle-text" id="subtitle-text"></span>
+      </div>
+    </main>
+
+    <!-- Discreet Minimal Input Bar (No emojis, no colorful buttons) -->
+    <footer class="minimal-footer">
+      <div class="input-pill" id="input-pill">
+        <button class="pill-btn mic-btn" id="btn-mic" title="Voice Input (Space)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+
+        <input type="text" class="chat-input" id="chat-input" placeholder="Ask Zia or press Enter..." autocomplete="off">
+
+        <button class="pill-btn send-btn" id="btn-send" title="Send (Enter)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

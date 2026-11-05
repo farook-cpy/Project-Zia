@@ -1,0 +1,201 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #000000;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
+}
+
+/* Transparent Overlay Desktop Mode */
+body.overlay-mode, html.overlay-mode {
+  background: transparent !important;
+  background-color: transparent !important;
+  -webkit-app-region: drag;
+}
+
+body.overlay-mode #canvas-container,
+body.overlay-mode #live2d-canvas {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+body.overlay-mode .input-modal,
+body.overlay-mode .help-overlay {
+  -webkit-app-region: no-drag;
+}
+
+#canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  z-index: 1;
+}
+
+#live2d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background-color: #000000;
+  cursor: grab;
+}
+
+#live2d-canvas:active {
+  cursor: grabbing;
+}
+
+/* Floating HUD - 100% Minimalist, Behind Hotkeys */
+.hud-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+}
+
+/* Hotkey / Event Toast Notification */
+.toast-notice {
+  align-self: center;
+  background: #111111;
+  border: 1px solid #262626;
+  color: #a3a3a3;
+  font-family: monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.toast-notice.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Subtitle Box - Appears only when talking */
+.subtitle-container {
+  align-self: center;
+  max-width: 640px;
+  width: 90%;
+  text-align: center;
+  margin-bottom: 20px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.subtitle-container.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.subtitle-text {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #f5f5f5;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid #222222;
+  padding: 10px 18px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+/* Minimal Pop-up Input Bar (Triggered by pressing Enter) */
+.input-modal {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  width: 90%;
+  max-width: 540px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+}
+
+.input-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.input-modal input {
+  width: 100%;
+  background: #0d0d0d;
+  border: 1px solid #2a2a2a;
+  outline: none;
+  color: #ffffff;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+}
+
+.input-modal input::placeholder {
+  color: #555555;
+}
+
+/* Minimal Hotkey Cheat-Sheet (Triggered by 'H' key) */
+.help-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #0d0d0d;
+  border: 1px solid #262626;
+  padding: 18px 24px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #cccccc;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 30;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9);
+}
+
+.help-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.help-overlay h4 {
+  font-size: 12px;
+  color: #888888;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.help-key {
+  color: #ffffff;
+  font-weight: 700;
+  background: #1e1e1e;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-right: 6px;
+}

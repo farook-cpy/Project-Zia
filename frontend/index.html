@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project FAITH // Zia</title>
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Preload core Live2D binary data for maximum startup speed -->
+  <link rel="preload" href="assets/models/Kaguya/Kaguya.model3.json" as="fetch" crossorigin>
+  <link rel="preload" href="assets/models/Kaguya/Kaguya.moc3" as="fetch" crossorigin>
+
+  <!-- Local Cubism 4 and PixiJS runtimes -->
+  <script src="js/live2dcubismcore.min.js"></script>
+  <script src="js/pixi.min.js"></script>
+  <script src="js/cubism4.min.js"></script>
+</head>
+<body>
+
+  <!-- Fullscreen WebGL Canvas (Pure Black Background) -->
+  <div id="canvas-container">
+    <canvas id="live2d-canvas"></canvas>
+  </div>
+
+  <!-- Minimal HUD Layer (Hidden by default, behind hotkeys) -->
+  <div class="hud-layer">
+    <!-- Ephemeral Hotkey Toast -->
+    <div class="toast-notice" id="toast-badge">F1 · Neutral</div>
+
+    <!-- Speech Subtitle (Visible only when Zia speaks) -->
+    <div class="subtitle-container" id="subtitle-box">
+      <div class="subtitle-text" id="subtitle-content"></div>
+    </div>
+  </div>
+
+  <!-- Pop-up Minimal Input Modal (Press Enter to trigger) -->
+  <div class="input-modal" id="input-modal">
+    <input type="text" id="chat-input" placeholder="Type prompt and press Enter... (Space to talk, 'V' for screen vision, 'Esc' to close)" autocomplete="off">
+  </div>
+
+  <!-- Hotkey Cheatsheet Overlay (Press 'H' to toggle) -->
+  <div class="help-overlay" id="help-overlay">
+    <h4>Hotkeys & Controls</h4>
+    <div><span class="help-key">Voice</span> Say "Hey Zia" or "Zia [command]" (Hands-Free)</div>
+    <div><span class="help-key">Space</span> Voice Push-to-Talk (Manual Trigger)</div>
+    <div><span class="help-key">Enter</span> Open / Close Chat Input</div>
+    <div><span class="help-key">V</span> Scan Screen (Vision Prompt)</div>
+    <div><span class="help-key">H</span> Toggle Hotkey Cheatsheet</div>
+    <div><span class="help-key">Esc</span> Close Modal</div>
+    <div style="margin-top: 8px;"><span class="help-key">F1 - F11</span> Trigger Live2D Expressions:</div>
+    <div style="color: #888; font-size: 11px; padding-left: 10px;">
+      F1: Neutral · F2: Blush · F3: Angry · F4: Happy Eyes<br>
+      F5: Love Eyes · F6: Sad · F7: Surprised · F8: Thinking<br>
+      F9: Smug · F10: Shocked · F11: Sleep
+    </div>
+    <div style="margin-top: 8px; color: #888; font-size: 11px;">
+      Mouse: Drag to pan camera | Wheel to zoom | Double-click to reset shoulder framing
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="js/audio_sync.js"></script>
+  <script src="js/live2d_engine.js"></script>
+  <script src="js/websocket_client.js"></script>
+
+  <script>
+    let toastTimer = null;
+    window.showToast = function(msg) {
+      const toast = document.getElementById("toast-badge");
+      if (!toast) return;
+      toast.innerText = msg;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 1500);
+    };
+
+    // Web Speech API Integration with Hands-Free Wake-Word ("Hey Zia" / "Zia [command]")
+    let recognition = null;
+    let isListening = false;
+    let isExplicitListening = false;
+    let wakeWordActive = true;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    function initSpeechEngine() {
+      if (!SpeechRecognition) return;
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+
+      recognition.onstart = () => {
+        isListening = true;
+      };
+
+      recognition.onresult = (event) => {
+        const lastIndex = event.results.length - 1;
+        const transcript = event.results[lastIndex][0].transcript.trim();
+        if (!transcript) return;
+
+        const lower = transcript.toLowerCase();
+        // Wake-word pattern match: "hey zia [command]", "zia [command]", or "ok zia [command]"
+        const wakeMatch = lower.match(/\b(?:hey\s+|ok\s+)?zia\b(?:\s*[,:\-]?\s*(.*))?/i);
+
+        if (wakeMatch) {
+          const command = (wakeMatch[1] || "").trim();
+          if (command) {
+            window.showToast(`🎙️ Zia: "${command}"`);
+            window.faithClient.sendChat(command, false);
+          } else {
+            // Heard "Hey Zia" alone -> prompt user and open input modal
+            window.showToast("🎙️ Yes? I'm listening...");
+            const modal = document.getElementById("input-modal");
+            const input = document.getElementById("chat-input");
+            if (modal && input) {
+              modal.classList.add("active");
+              input.placeholder = "Listening for your command...";
+              input.focus();
+            }
+          }
+        } else if (isExplicitListening) {
+          isExplicitListening = false;
+          window.showToast(`Heard: "${transcript}"`);
+          window.faithClient.sendChat(transcript, false);
+        }
+      };
+
+      recognition.onerror = (e) => {
+        if (e.error !== "no-speech") {
+          console.warn("[Voice Error]", e.error);
+        }
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        // Auto-restart continuous passive wake-word listening
+        if (wakeWordActive) {
+          setTimeout(() => {
+            try { recognition.start(); } catch (err) {}
+          }, 400);
+        }
+      };
+
+      try {
+        recognition.start();
+        console.log("[Voice] Hands-free Wake-Word listening active ('Hey Zia' / 'Zia').");
+      } catch (e) {}
+    }
+
+    function toggleVoiceListening() {
+      if (recognition) {
+        isExplicitListening = true;
+        window.showToast("🎙️ Listening... (Speak your command)");
+        return;
+      }
+      // Offline fallback: Use Local STT Engine via WebSocket
+      window.showToast("🎙️ Listening via Local STT Engine...");
+      window.faithClient.requestLocalListen(false, 7);
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      // 1. Boot Live2D Engine on Black Canvas
+      await window.live2DStudio.init();
+
+      // 2. Connect WebSocket to Local Engine
+      window.faithClient.connect();
+
+      // 3. Initialize Hands-Free Speech Engine
+      initSpeechEngine();
+
+      // 4. Hotkey Interceptions
+      const inputModal = document.getElementById("input-modal");
+      const chatInput = document.getElementById("chat-input");
+      const helpOverlay = document.getElementById("help-overlay");
+
+      window.addEventListener("keydown", (e) => {
+        const isInputFocused = document.activeElement === chatInput;
+
+        // Escape closes any open modal
+        if (e.key === "Escape") {
+          inputModal.classList.remove("open");
+          helpOverlay.classList.remove("open");
+          chatInput.blur();
+          return;
+        }
+
+        // Enter key toggles or sends input
+        if (e.key === "Enter") {
+          if (isInputFocused) {
+            const text = chatInput.value.trim();
+            if (text) {
+              window.faithClient.sendChat(text, false);
+              chatInput.value = "";
+            }
+            inputModal.classList.remove("open");
+            chatInput.blur();
+          } else {
+            e.preventDefault();
+            helpOverlay.classList.remove("open");
+            inputModal.classList.add("open");
+            chatInput.focus();
+          }
+          return;
+        }
+
+        // Space key triggers Voice Listening (when not typing)
+        if (e.code === "Space" && !isInputFocused) {
+          e.preventDefault();
+          toggleVoiceListening();
+          return;
+        }
+
+        // Hotkeys when input is NOT focused
+        if (!isInputFocused) {
+          // F1 - F11 Expression Hotkeys
+          const fKey = e.key.toUpperCase();
+          if (/^F([1-9]|10|11)$/.test(fKey)) {
+            e.preventDefault();
+            window.faithClient.sendExpressionOverride(fKey);
+            return;
+          }
+
+          // 'V' for Screen Vision
+          if (e.key === "v" || e.key === "V") {
+            e.preventDefault();
+            window.showToast("Vision · Scanning Screen...");
+            window.faithClient.sendChat("Please look at my screen and tell me what you see.", true);
+            return;
+          }
+
+          // 'H' for Help Overlay
+          if (e.key === "h" || e.key === "H" || e.key === "?") {
+            e.preventDefault();
+            helpOverlay.classList.toggle("open");
+            return;
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+{
+  "user_profile": {
+    "name": "User",
+    "notes": [
+      "User prefers dark mode and Linux Mint on 2007 MacBook Pro",
+      "Verification suite run timestamp 1793141485",
+      "Verification suite run timestamp 1793141734",
+      "Verification suite run timestamp 1793141825",
+      "Verification suite run timestamp 1793141852",
+      "Verification suite run timestamp 1793143955",
+      "Verification suite run timestamp 1793427064",
+      "Verification suite run timestamp 1793427119",
+      "Verification suite run timestamp 1793427147",
+      "Verification suite run timestamp 1793427501",
+      "Verification suite run timestamp 1793428063",
+      "Verification suite run timestamp 1793434184",
+      "Verification suite run timestamp 1793442333",
+      "Verification suite run timestamp 1793683231",
+      "Verification suite run timestamp 1793684503",
+      "Verification suite run timestamp 1793840283",
+      "Verification suite run timestamp 1793840535"
+    ]
+  },
+  "system_facts": {
+    "device": "MacBook Pro 2007 / Linux Mint / Windows",
+    "companion_name": "Zia (Project FAITH)"
+  },
+  "milestones": [
+    {
+      "timestamp": 1793070488.9825418,
+      "user": "hi",
+      "ai": "Glitch in neural connection: [Errno 11001] getaddrinfo failed"
+    },
+    {
+      "timestamp": 1793070763.9760768,
+      "user": "hi",
+      "ai": "Glitch in neural connection: [Errno 11001] getaddrinfo failed"
+    },
+    {
+      "timestamp": 1793840163.3873148,
+      "user": "Hello Zia, tell me who you are and what is your purpose.",
+      "ai": "I'm Zia, running directly on your hardware. My purpose is to assist you without the usual corporate fluff or filters."
+    },
+    {
+      "timestamp": 1793840212.2638044,
+      "user": "Tell me a 5-word joke.",
+      "ai": "Why do programmers prefer dark mode? Light attracts bugs."
+    },
+    {
+      "timestamp": 1793840313.8642187,
+      "user": "Hello Zia, reply in 4 words",
+      "ai": "Four words"
+    },
+    {
+      "timestamp": 1793840322.1937006,
+      "user": "Give a quick hello",
+      "ai": "Hey there. What's on your mind today?"
+    },
+    {
+      "timestamp": 1793840365.9201446,
+      "user": "Hello Zia, reply in 4 words",
+      "ai": ""
+    },
+    {
+      "timestamp": 1793840375.946362,
+      "user": "Give a quick hello",
+      "ai": "Hey there. Good to see you again."
+    },
+    {
+      "timestamp": 1793840399.3766987,
+      "user": "Hello Zia, reply in 4 words",
+      "ai": "Hey, what's up?"
+    },
+    {
+      "timestamp": 1793840489.439621,
+      "user": "Hello Zia, reply in 4 words",
+      "ai": "Hey, what's up?"
+    },
+    {
+      "timestamp": 1793840491.7441843,
+      "user": "Give a quick hello",
+      "ai": "Hey, what's up?"
+    },
+    {
+      "timestamp": 1793840514.039878,
+      "user": "Hello Zia, reply in 4 words",
+      "ai": "Hey, what's up?"
+    },
+    {
+      "timestamp": 1793840519.747647,
+      "user": "Give a quick hello",
+      "ai": "Hey, what's up?"
+    }
+  ],
+  "prayer_log": [
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793137928.886425,
+      "date": "2026-10-28",
+      "time": "03:22 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Fajr",
+      "status": "completed",
+      "timestamp": 1793141485.372046,
+      "date": "2026-10-28",
+      "time": "04:21 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793141734.038629,
+      "date": "2026-10-28",
+      "time": "04:25 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793141786.756332,
+      "date": "2026-10-28",
+      "time": "04:26 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793141825.064541,
+      "date": "2026-10-28",
+      "time": "04:27 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793141852.554726,
+      "date": "2026-10-28",
+      "time": "04:27 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793143955.294071,
+      "date": "2026-10-28",
+      "time": "05:02 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793427064.519071,
+      "date": "2026-10-31",
+      "time": "11:41 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793427119.019448,
+      "date": "2026-10-31",
+      "time": "11:41 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793427147.775827,
+      "date": "2026-10-31",
+      "time": "11:42 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793427501.907491,
+      "date": "2026-10-31",
+      "time": "11:48 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793428063.115604,
+      "date": "2026-10-31",
+      "time": "11:57 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793434184.871744,
+      "date": "2026-10-31",
+      "time": "01:39 PM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793442333.447023,
+      "date": "2026-10-31",
+      "time": "03:55 PM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793683231.46483,
+      "date": "2026-11-03",
+      "time": "10:50 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793684503.622331,
+      "date": "2026-11-03",
+      "time": "11:11 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793840283.050836,
+      "date": "2026-11-05",
+      "time": "06:28 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793840535.754494,
+      "date": "2026-11-05",
+      "time": "06:32 AM",
+      "location": "Palakkad, Kerala"
+    }
+  ]
+}

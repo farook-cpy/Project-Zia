@@ -1,0 +1,63 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "../Kaguya/Kaguya.moc3",
+    "Textures": [
+      "../Kaguya/textures/texture_00.png",
+      "../Kaguya/textures/texture_01.png"
+    ],
+    "Physics": "../Kaguya/Kaguya.physics3.json",
+    "DisplayInfo": "../Kaguya/Kaguya.cdi3.json",
+    "Expressions": [
+      {
+        "Name": "crying",
+        "File": "../Kaguya/expressions/crying.exp3.json"
+      },
+      {
+        "Name": "teardrop",
+        "File": "../Kaguya/expressions/teardrop.exp3.json"
+      },
+      {
+        "Name": "squint",
+        "File": "../Kaguya/expressions/squint.exp3.json"
+      },
+      {
+        "Name": "smile",
+        "File": "../Kaguya/expressions/smile.exp3.json"
+      },
+      {
+        "Name": "眼泪",
+        "File": "../Kaguya/expressions/crying.exp3.json"
+      },
+      {
+        "Name": "泪珠",
+        "File": "../Kaguya/expressions/teardrop.exp3.json"
+      },
+      {
+        "Name": "眯眯眼",
+        "File": "../Kaguya/expressions/squint.exp3.json"
+      },
+      {
+        "Name": "笑咪咪",
+        "File": "../Kaguya/expressions/smile.exp3.json"
+      }
+    ]
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": [
+        "ParamEyeLOpen",
+        "ParamEyeROpen"
+      ]
+    },
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": [
+        "ParamMouthOpenY"
+      ]
+    }
+  ]
+}
