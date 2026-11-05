@@ -141,3 +141,4 @@ class FamilyNotificationBridge:
 
 # Singleton instance
 family_bridge = FamilyNotificationBridge()
+

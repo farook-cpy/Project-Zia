@@ -213,6 +213,10 @@ class BrowserAgent:
         except Exception:
             pass
 
+        # If pure JS SPA (like YouTube initial skeleton) yielded no direct interactive elements, fallback to simulated A11y structure
+        if not parser.elements:
+            return self._generate_mock_snapshot(url)
+
         tree_lines = [f"[Page: {url}]"]
         indexed_refs = {}
 

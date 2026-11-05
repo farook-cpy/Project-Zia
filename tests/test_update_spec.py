@@ -222,6 +222,74 @@ class UpdateSpecTestRunner:
 
         self.record("Phase 5", "Native voice note (.ogg/.mp3) neural synthesis pipeline", voice_ok or EDGE_TTS_AVAILABLE, f"Voice audio generated: {voice_path if voice_ok else 'Edge-TTS available'}")
 
+    # -------------------------------------------------------------------------
+    # PHASE 6: Agent-Browser CDP Automation & Token-Efficient A11y Trees
+    # -------------------------------------------------------------------------
+    def phase_6_agent_browser(self):
+        print(f"\n{ANSI_BOLD}{ANSI_MAGENTA}>>> PHASE 6: Agent-Browser CDP Automation & Token-Efficient A11y Trees{ANSI_RESET}")
+        from engine.browser_agent import browser_agent
+        from engine.local_commands import local_router
+        from server import app
+
+        # 1. Open URL & Accessibility Tree Generation
+        nav_res = browser_agent.open_url("https://youtube.com")
+        has_nav = nav_res.get("success") is True and "snapshot" in nav_res
+        self.record("Phase 6", "Agent-Browser URL Navigation & CDP Controller", has_nav, f"Method: {nav_res.get('method')}")
+
+        # 2. Token-Efficient Snapshot check with @e1, @e2 reference tokens (<150 tokens)
+        snap = browser_agent.get_accessibility_snapshot()
+        tree = snap.get("tree_text", "")
+        tokens = snap.get("estimated_tokens", 50)
+        has_tokens = "@e1" in tree and "@e2" in tree and tokens < 150
+        self.record("Phase 6", "Compact Accessibility Tree Snapshot (@e1, @e2 tokens, <150 tokens)", has_tokens, f"{tokens} estimated tokens, {snap.get('elements_count')} elements")
+
+        # 3. Interactive actions & structured data extraction
+        click_res = browser_agent.click_element("@e2")
+        type_res = browser_agent.type_element("@e1", "lofi anime chill beats")
+        schedule_res = browser_agent.check_live_schedule("Palakkad", "Coimbatore")
+        has_actions = click_res.get("success") and type_res.get("success") and len(schedule_res.get("schedule", [])) >= 2
+        self.record("Phase 6", "Interactive Action Execution & Live Schedule Extraction", has_actions, f"Schedule records: {len(schedule_res.get('schedule', []))}")
+
+        # 4. Zero-token command router integration
+        cmd_res = local_router.match_and_execute("train schedule Palakkad to Coimbatore")
+        self.record("Phase 6", "Zero-token browser intent router ('train schedule')", cmd_res is not None and "Coimbatore" in cmd_res.get("text", ""), f"Reply: {cmd_res.get('text', '')[:40] if cmd_res else None}")
+
+    # -------------------------------------------------------------------------
+    # PHASE 7: Family OTP & Notification Sink (Local Queue)
+    # -------------------------------------------------------------------------
+    def phase_7_family_otp_bridge(self):
+        print(f"\n{ANSI_BOLD}{ANSI_MAGENTA}>>> PHASE 7: Family OTP & Notification Sink (Local Queue){ANSI_RESET}")
+        from engine.family_bridge import family_bridge
+        from engine.local_commands import local_router
+        from server import app
+
+        # 1. Enqueue notification with automated OTP extraction
+        sample_msg = "Your SBI net banking OTP is 849201 for Rs 1200 payment. Do not share this with anyone."
+        res = family_bridge.enqueue_notification(
+            device="Dad's Samsung S21",
+            app_name="Messages",
+            message=sample_msg,
+            sender="VK-SBIINB"
+        )
+        self.record("Phase 7", "Family SMS notification local ingestion & queue persistence", res.get("success") is True, f"Device: {res.get('device')}")
+        self.record("Phase 7", "Automated regex OTP extraction (4-8 digits)", res.get("is_otp") is True and res.get("otp_code") == "849201", f"Extracted OTP: {res.get('otp_code')}")
+
+        # 2. Server Webhook Endpoint validation
+        client = app.test_client()
+        hook_res = client.post("/api/webhook/notification", json={
+            "device": "Mom's Galaxy M32",
+            "app": "WhatsApp",
+            "message": "Your verification code is 493021",
+            "sender": "HDFC Bank"
+        })
+        self.record("Phase 7", "Server webhook endpoint (POST /api/webhook/notification)", hook_res.status_code == 200, f"Status: {hook_res.status_code}")
+
+        # 3. Zero-token natural language OTP query
+        query_res = local_router.match_and_execute("What is the latest OTP?")
+        has_otp_voice = query_res is not None and ("493021" in query_res.get("text", "") or "849201" in query_res.get("text", ""))
+        self.record("Phase 7", "Zero-token Natural Language OTP query ('What is the OTP?')", has_otp_voice, f"Spoken: {query_res.get('text') if query_res else None}")
+
+
 
 if __name__ == "__main__":
     runner = UpdateSpecTestRunner()

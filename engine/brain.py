@@ -216,7 +216,7 @@ class BrainEngine:
 
         contents.append(f"User: {user_message}")
 
-        models_to_try = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-latest"]
+        models_to_try = ["gemini-3.8-flash", "gemini-flash-latest"]
         raw_text = ""
         _, types_mod = _get_genai_modules()
         gen_cfg = types_mod.GenerateContentConfig(

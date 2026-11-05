@@ -197,5 +197,15 @@
     "target_timestamp": 1793841435.7557065,
     "target_time_str": "08:17:15 PM",
     "status": "active"
+  },
+  {
+    "id": "timer_abaa32",
+    "type": "timer",
+    "label": "Test Timer",
+    "duration_sec": 900,
+    "created_at": 1793840862.9915326,
+    "target_timestamp": 1793841762.9915326,
+    "target_time_str": "08:22:42 PM",
+    "status": "active"
   }
 ]
