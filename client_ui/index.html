@@ -2,7 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!--
+    Sony Xperia 1 III — 21:9 CinemaWide 4K HDR OLED
+    viewport-fit=cover: fills the full 21:9 panel edge-to-edge incl. notch area.
+    maximum-scale=1.0: prevents double-tap zoom that disrupts sprite interactions.
+  -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0,
+                 user-scalable=no, viewport-fit=cover">
+
+  <!-- OLED matte black chrome — matches --bg-base exactly -->
+  <meta name="theme-color" content="#0a0a0c">
+  <meta name="color-scheme" content="dark">
+
+  <!-- Mobile web-app hints -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <title>Zia</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,8 +30,8 @@
     <main class="visual-stage">
       <!-- 1. Default Minimal Mode: Expressive Clean Grey Eyes & Audio Mouth -->
       <div class="minimal-container" id="minimal-stage">
-        
-        <!-- Expressive Face Container (Tracks mouse, reacts to clicks) -->
+
+        <!-- Expressive Face Container (Tracks mouse/touch, reacts to taps) -->
         <div class="avatar-face cyber-face mood-f1" id="avatar-face">
           <!-- Left Eye -->
           <div class="avatar-eye eye-left" id="eye-left">
@@ -55,7 +72,11 @@
           <div class="anime-speech-bubble" id="anime-speech-bubble">
             <span id="anime-speech-text">Hey there!</span>
           </div>
-          <img id="anime-sprite-img" class="anime-sprite-img" src="/assets/sprites/zia_anime/idle_open.png" alt="Zia Anime Girl">
+          <img id="anime-sprite-img"
+               class="anime-sprite-img"
+               src="/assets/sprites/zia_anime/idle_open.png"
+               alt="Zia Anime Girl"
+               draggable="false">
         </div>
       </div>
 
@@ -68,19 +89,28 @@
     <!-- Discreet Minimal Input Bar (No emojis, no colorful buttons) -->
     <footer class="minimal-footer">
       <div class="input-pill" id="input-pill">
-        <button class="pill-btn mic-btn" id="btn-mic" title="Voice Input (Space)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="pill-btn mic-btn" id="btn-mic" title="Voice Input (Space)" aria-label="Voice input">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
             <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
+            <line x1="8"  y1="23" x2="16" y2="23"/>
           </svg>
         </button>
 
-        <input type="text" class="chat-input" id="chat-input" placeholder="Ask Zia or press Enter..." autocomplete="off">
+        <input type="text"
+               class="chat-input"
+               id="chat-input"
+               placeholder="Ask Zia or press Enter..."
+               autocomplete="off"
+               autocorrect="off"
+               spellcheck="false"
+               enterkeyhint="send">
 
-        <button class="pill-btn send-btn" id="btn-send" title="Send (Enter)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="pill-btn send-btn" id="btn-send" title="Send (Enter)" aria-label="Send message">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="22" y1="2" x2="11" y2="13"/>
             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>

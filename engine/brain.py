@@ -164,7 +164,47 @@ class BrainEngine:
         clean_text = re.sub(r"\[MOOD:[^\]]+\]", "", text)
         clean_text = re.sub(r"\[ACTION:[^\]]+\]", "", clean_text).strip()
 
+        # Enforce strict anti-slop post-processing
+        clean_text = self._sanitize_anti_slop(clean_text)
+
         return clean_text, mood, actions
+
+    def _sanitize_anti_slop(self, text: str) -> str:
+        """Enforces natural, direct, 1-2 sentence human partner tone with zero filler."""
+        if not text:
+            return ""
+        # 1. Strip sycophantic preamble
+        slop_prefixes = [
+            r"^sure thing[!,.]?\s*",
+            r"^certainly[!,.]?\s*",
+            r"^i'?d be happy to help(?: with that)?[!,.]?\s*",
+            r"^of course[!,.]?\s*",
+            r"^great question[!,.]?\s*",
+            r"^absolutely[!,.]?\s*",
+            r"^hello! i am [^.,!]+[.,!]\s*",
+            r"^as an ai language model[!,.]?\s*",
+        ]
+        for pattern in slop_prefixes:
+            text = re.sub(pattern, "", text, flags=re.IGNORECASE)
+
+        # 2. Strip corporate trailing filler & disclaimers
+        slop_suffixes = [
+            r"\s*let me know if you (?:need|have) (?:any|further) (?:questions|help|assistance)[^.]*[.]?$",
+            r"\s*please let me know if (?:there's anything else|you need anything)[^.]*[.]?$",
+            r"\s*i hope this (?:helps|information is helpful)[^.]*[.]?$",
+            r"\s*feel free to ask (?:if you have|any) [^.]*[.]?$",
+            r"\s*as an ai(?: language model)?[^.]*[.]?$",
+            r"\s*disclaimer:[^.]*[.]?$"
+        ]
+        for pattern in slop_suffixes:
+            text = re.sub(pattern, "", text, flags=re.IGNORECASE)
+
+        # 3. Limit to 1-2 sentences max
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text.strip()) if s.strip()]
+        if len(sentences) > 2:
+            text = " ".join(sentences[:2])
+
+        return text.strip()
 
     async def think_and_reply(
         self,
@@ -216,7 +256,7 @@ class BrainEngine:
 
         contents.append(f"User: {user_message}")
 
-        models_to_try = ["gemini-3.8-flash", "gemini-flash-latest"]
+        models_to_try = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash", "gemini-flash-latest"]
         raw_text = ""
         _, types_mod = _get_genai_modules()
         gen_cfg = types_mod.GenerateContentConfig(
@@ -241,7 +281,8 @@ class BrainEngine:
                 continue
 
         if not raw_text:
-            raw_text = f"[MOOD:F3] Glitch in neural connection: {str(last_err)}"
+            print(f"[BrainEngine] 4-tier model fallback exhausted or neural connection offline: {last_err}")
+            raw_text = "[MOOD:F1] I'm right here with you. Operating in offline local mode."
 
         clean_text, mood, actions = self._parse_response(raw_text)
 

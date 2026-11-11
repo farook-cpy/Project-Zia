@@ -1,0 +1,310 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# ==============================================================================
+# PROJECT ZIA // SONY XPERIA 1 III — ONE-LINE TERMUX INSTALLER
+# Snapdragon 888 · 12 GB RAM · Android 12 · Termux 0.118+
+#
+# Usage (one-liner):
+#   curl -fsSL https://raw.githubusercontent.com/YOUR_REPO/main/install_xperia.sh | bash
+#   — or —
+#   bash install_xperia.sh
+# ==============================================================================
+
+set -euo pipefail
+
+# ── Colour palette ─────────────────────────────────────────────────────────────
+RED='\033[0;31m';  YEL='\033[0;33m'; GRN='\033[0;32m'
+CYN='\033[0;36m';  BLD='\033[1m';    RST='\033[0m'
+
+step()  { echo -e "\n${CYN}${BLD}[ZIA]${RST} ${BLD}$*${RST}"; }
+ok()    { echo -e "  ${GRN}✓${RST} $*"; }
+warn()  { echo -e "  ${YEL}⚠${RST}  $*"; }
+die()   { echo -e "  ${RED}✗ FATAL:${RST} $*"; exit 1; }
+
+# ── Guard: must run inside Termux ──────────────────────────────────────────────
+[[ -d /data/data/com.termux ]] || die "This script must be run inside Termux on Android."
+[[ "$(uname -m)" == "aarch64" ]] || warn "Expected aarch64 (ARM64). Got $(uname -m) — continuing anyway."
+
+TERMUX_PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
+HOME_DIR="${HOME:-/data/data/com.termux/files/home}"
+ZIA_DIR="${HOME_DIR}/project_zia"
+
+echo -e "\n${CYN}${BLD}════════════════════════════════════════════════════════════${RST}"
+echo -e "${CYN}${BLD}   PROJECT ZIA // XPERIA 1 III AUTO-INSTALLER                ${RST}"
+echo -e "${CYN}${BLD}════════════════════════════════════════════════════════════${RST}\n"
+
+# ── STEP 1: Core Termux packages ───────────────────────────────────────────────
+step "1/8  Updating package lists & installing core packages"
+pkg update -y -o Dpkg::Options::="--force-confnew" 2>&1 | tail -5
+pkg install -y \
+    python git \
+    termux-api termux-tools \
+    clang libffi openssl \
+    libjpeg-turbo libpng \
+    ffmpeg \
+    sqlite \
+    pkg-config \
+    make cmake ninja \
+    patchelf \
+    2>&1 | tail -10
+ok "Core packages installed."
+
+# ── STEP 2: pip / wheel support (ARM64 binary wheels via piwheels / pypi) ──────
+step "2/8  Upgrading pip and installing ARM64-friendly build tools"
+python -m ensurepip --upgrade 2>/dev/null || true
+pip install --upgrade pip wheel setuptools 2>&1 | tail -4
+ok "pip $(pip --version | cut -d' ' -f2) ready."
+
+# ── STEP 3: Python requirements (ARM64-safe subset) ───────────────────────────
+step "3/8  Installing Python requirements (ARM64 / Termux compatible)"
+
+# Build a Termux-safe requirements file — strips desktop-only wheels
+SAFE_REQS="${HOME_DIR}/.zia_termux_requirements.txt"
+cat > "${SAFE_REQS}" <<'REQS'
+# Core async / networking
+aiohttp>=3.9.0
+websockets>=12.0
+python-dotenv>=1.0.0
+
+# Google AI
+google-genai>=2.0.0
+
+# TTS
+edge-tts>=6.1.0
+
+# Image processing (libjpeg-turbo is installed via pkg)
+Pillow>=10.0.0
+
+# System monitoring
+psutil>=5.9.0
+
+# Numerical
+numpy>=1.24.0
+
+# Speech recognition (vosk has ARM64 wheels on PyPI)
+vosk>=0.3.45
+
+# Audio I/O — sounddevice works with libportaudio in Termux
+sounddevice>=0.4.6
+
+# OpenCV headless (builds from source on aarch64 or use pre-built wheel)
+opencv-python-headless>=4.8.0
+REQS
+
+# Desktop-only: mss, pyautogui, pygetwindow, pywebview — skipped on Android
+warn "Skipping desktop-only packages: mss, pyautogui, pygetwindow, pywebview"
+
+pip install \
+    --no-cache-dir \
+    --extra-index-url https://www.piwheels.org/simple \
+    -r "${SAFE_REQS}" \
+    2>&1 | tail -20
+ok "Python requirements installed."
+
+# ── STEP 4: Persistent Wake-Lock ───────────────────────────────────────────────
+step "4/8  Configuring persistent Termux wake-lock"
+if command -v termux-wake-lock &>/dev/null; then
+    termux-wake-lock
+    ok "Wake-lock acquired. Android Doze will NOT suspend Zia's background loop."
+else
+    warn "termux-wake-lock binary not found. Install 'Termux:API' app from F-Droid."
+fi
+
+# ── STEP 5: Snapdragon 888 Thermal Safeguard ──────────────────────────────────
+step "5/8  Applying Snapdragon 888 battery thermal safeguard"
+
+# 5a. Limit charging current to reduce heat during long charging sessions.
+# /sys/class/power_supply/battery/constant_charge_current_max is accessible
+# without root on many Xperia 1 III kernels; write silently if unavailable.
+CHARGE_CTRL="/sys/class/power_supply/battery/constant_charge_current_max"
+if [[ -w "${CHARGE_CTRL}" ]]; then
+    # Cap at 2500 mA (default OEM maximum is ~4400 mA, which causes thermal stress)
+    echo 2500000 > "${CHARGE_CTRL}" && ok "Charge current capped at 2500 mA to reduce heat." \
+        || warn "Could not write charge current limit (may need root)."
+else
+    warn "Charge-current sysfs node not writable — thermal protection relies on software watchdog."
+fi
+
+# 5b. Write a Termux-aware thermal config consumed by heartbeat.py at runtime
+THERMAL_CFG="${HOME_DIR}/.zia_thermal.conf"
+cat > "${THERMAL_CFG}" <<'THERMAL'
+# Project Zia — Snapdragon 888 Thermal Config (auto-generated by install_xperia.sh)
+# Loaded by engine/heartbeat.py on Android.
+CRITICAL_TEMP_C=72
+SAFE_TEMP_C=60
+THROTTLE_FPS=5
+NORMAL_FPS=24
+CHARGE_CURRENT_LIMIT_MA=2500
+THERMAL
+ok "Thermal config written to ${THERMAL_CFG}"
+
+# ── STEP 6: Clone / update Project Zia ────────────────────────────────────────
+step "6/8  Setting up Project Zia directory"
+
+if [[ -d "${ZIA_DIR}/.git" ]]; then
+    warn "Existing repo found at ${ZIA_DIR}. Pulling latest..."
+    git -C "${ZIA_DIR}" pull --ff-only 2>&1 | tail -3 || warn "Git pull failed — using existing files."
+elif [[ -d "${ZIA_DIR}" ]]; then
+    ok "Non-git directory found at ${ZIA_DIR} — skipping clone."
+else
+    warn "No existing repo found. If you have a remote, clone it here:"
+    warn "  git clone <YOUR_ZIA_REPO_URL> ${ZIA_DIR}"
+    mkdir -p "${ZIA_DIR}"
+fi
+
+# ── STEP 7: Generate .env if missing ──────────────────────────────────────────
+step "7/8  Generating default .env configuration"
+
+ENV_FILE="${ZIA_DIR}/.env"
+if [[ -f "${ENV_FILE}" ]]; then
+    ok ".env already exists — skipping generation (preserving your keys)."
+else
+    cat > "${ENV_FILE}" <<'DOTENV'
+# ── Project Zia / Xperia 1 III Runtime Configuration ─────────────────────────
+# Fill in GEMINI_API_KEY before starting Zia.
+
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Server
+HOST=0.0.0.0
+PORT=5000
+HTTP_PORT=8080
+WS_PORT=8765
+RPC_SECRET=zia_palakkad_xperia_secure_key_888
+
+# Live2D Model
+MODEL_NAME=TianYeLulu
+MODEL_PATH=/assets/models/TianYeLulu/TianYeLulu.model3.json
+
+# Audio lip-sync
+LIP_SYNC_SENSITIVITY=1.2
+
+# Proactive idle check (seconds; 0 to disable)
+PROACTIVE_IDLE_SECONDS=45
+
+# IoT Bridge
+IOT_DEVICE_IP=192.168.1.50
+IOT_DEVICE_TYPE=tasmota
+
+# Android / Termux flags (auto-detected, but can be forced)
+PLATFORM=android
+TERMUX_MODE=1
+
+# Thermal thresholds (Snapdragon 888)
+THERMAL_CRITICAL_C=72
+THERMAL_SAFE_C=60
+DOTENV
+    ok ".env created at ${ENV_FILE}"
+fi
+
+# ── STEP 8: Install launcher scripts ──────────────────────────────────────────
+step "8/8  Installing start_xperia.sh launcher and Termux:Boot script"
+
+# 8a. start_xperia.sh — main one-command launcher
+LAUNCHER="${ZIA_DIR}/start_xperia.sh"
+cat > "${LAUNCHER}" <<'LAUNCHER_SCRIPT'
+#!/data/data/com.termux/files/usr/bin/bash
+# ==============================================================================
+# PROJECT ZIA // SONY XPERIA 1 III 24/7 BACKGROUND SERVER NODE
+# Snapdragon 888 | 12GB RAM | Termux Android Environment
+# ==============================================================================
+
+set -euo pipefail
+
+CYN='\033[0;36m'; GRN='\033[0;32m'; YEL='\033[0;33m'; RST='\033[0m'; BLD='\033[1m'
+
+echo -e "\n${CYN}${BLD}══════════════════════════════════════════════════════════════${RST}"
+echo -e "${CYN}${BLD}   PROJECT ZIA — SONY XPERIA 1 III 24/7 NODE                  ${RST}"
+echo -e "${CYN}${BLD}══════════════════════════════════════════════════════════════${RST}"
+
+ZIA_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "${ZIA_DIR}"
+
+# Load .env
+if [[ -f "${ZIA_DIR}/.env" ]]; then
+    set -a; source "${ZIA_DIR}/.env"; set +a
+fi
+
+# 1. Wake-lock — prevents Android Doze from freezing the process
+if command -v termux-wake-lock &>/dev/null; then
+    termux-wake-lock
+    echo -e "  ${GRN}✓${RST} Wake-lock active."
+else
+    echo -e "  ${YEL}⚠${RST}  termux-wake-lock not found. Install Termux:API app."
+fi
+
+# 2. Termux:API presence check
+if command -v termux-battery-status &>/dev/null; then
+    echo -e "  ${GRN}✓${RST} Termux:API available (battery, vibration, TTS hooks ready)."
+else
+    echo -e "  ${YEL}⚠${RST}  Termux:API tools missing. Run: pkg install termux-api"
+fi
+
+# 3. Snapdragon 888 thermal pre-check
+BATT_JSON="$(termux-battery-status 2>/dev/null || echo '{}')"
+BATT_PCT="$(echo "${BATT_JSON}" | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('percentage',100))" 2>/dev/null || echo 100)"
+BATT_TEMP="$(echo "${BATT_JSON}" | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('temperature',0))" 2>/dev/null || echo 0)"
+
+echo -e "  ${GRN}✓${RST} Battery: ${BATT_PCT}%  |  Temp: ${BATT_TEMP}°C"
+
+if (( $(echo "${BATT_TEMP} > 42" | bc -l 2>/dev/null || echo 0) )); then
+    echo -e "  ${YEL}⚠${RST}  Battery temp ${BATT_TEMP}°C — above 42°C comfort zone. Consider cooling break."
+fi
+
+# 4. Set runtime environment flags
+export PORT="${PORT:-5000}"
+export RPC_SECRET="${RPC_SECRET:-zia_palakkad_xperia_secure_key_888}"
+export PLATFORM="android"
+export TERMUX_MODE="1"
+export PYTHONUNBUFFERED=1
+export PYTHONDONTWRITEBYTECODE=1
+
+# 5. Launch Flask server
+echo -e "\n${GRN}${BLD}  Launching Zia on 0.0.0.0:${PORT} …${RST}\n"
+exec python server.py
+LAUNCHER_SCRIPT
+
+chmod +x "${LAUNCHER}"
+ok "Launcher installed: ${LAUNCHER}"
+
+# 8b. Termux:Boot auto-start script
+BOOT_DIR="${HOME_DIR}/.termux/boot"
+mkdir -p "${BOOT_DIR}"
+BOOT_SCRIPT="${BOOT_DIR}/start_zia.sh"
+
+cat > "${BOOT_SCRIPT}" <<BOOT
+#!/data/data/com.termux/files/usr/bin/bash
+# ==============================================================================
+# PROJECT ZIA // TERMUX:BOOT AUTO-START
+# Runs automatically when the device boots (requires Termux:Boot app).
+# ==============================================================================
+
+# Wait for Android to fully settle after boot
+sleep 15
+
+# Re-acquire wake lock
+termux-wake-lock 2>/dev/null || true
+
+# Navigate to Zia and launch in background (nohup for persistent run)
+cd "${ZIA_DIR}"
+nohup bash start_xperia.sh >> "${HOME_DIR}/zia_boot.log" 2>&1 &
+
+echo "\$(date): Zia boot-start initiated (PID \$!)" >> "${HOME_DIR}/zia_boot.log"
+BOOT
+
+chmod +x "${BOOT_SCRIPT}"
+ok "Boot script installed: ${BOOT_SCRIPT}"
+
+# ── Summary ────────────────────────────────────────────────────────────────────
+echo -e "\n${GRN}${BLD}════════════════════════════════════════════════════════════${RST}"
+echo -e "${GRN}${BLD}  ✓  PROJECT ZIA XPERIA INSTALL COMPLETE                     ${RST}"
+echo -e "${GRN}${BLD}════════════════════════════════════════════════════════════${RST}"
+echo -e ""
+echo -e "  ${BLD}Next steps:${RST}"
+echo -e "  1. Edit ${ENV_FILE} and set GEMINI_API_KEY"
+echo -e "  2. Install Termux:API app (F-Droid) if not already installed"
+echo -e "  3. Install Termux:Boot app (F-Droid) for auto-start on reboot"
+echo -e "  4. Launch Zia:  cd ${ZIA_DIR} && bash start_xperia.sh"
+echo -e ""
+echo -e "  Boot script: ${BOOT_SCRIPT}"
+echo -e "  Thermal cfg: ${HOME_DIR}/.zia_thermal.conf"
+echo -e ""

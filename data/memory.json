@@ -19,7 +19,12 @@
       "Verification suite run timestamp 1793684503",
       "Verification suite run timestamp 1793840283",
       "Verification suite run timestamp 1793840535",
-      "Verification suite run timestamp 1793840862"
+      "Verification suite run timestamp 1793840862",
+      "Verification suite run timestamp 1793853143",
+      "Verification suite run timestamp 1794361528",
+      "Verification suite run timestamp 1794361553",
+      "Verification suite run timestamp 1794362205",
+      "Verification suite run timestamp 1794362269"
     ]
   },
   "system_facts": {
@@ -28,79 +33,79 @@
   },
   "milestones": [
     {
-      "timestamp": 1793070488.9825418,
-      "user": "hi",
-      "ai": "Glitch in neural connection: [Errno 11001] getaddrinfo failed"
-    },
-    {
-      "timestamp": 1793070763.9760768,
-      "user": "hi",
-      "ai": "Glitch in neural connection: [Errno 11001] getaddrinfo failed"
-    },
-    {
-      "timestamp": 1793840163.3873148,
-      "user": "Hello Zia, tell me who you are and what is your purpose.",
-      "ai": "I'm Zia, running directly on your hardware. My purpose is to assist you without the usual corporate fluff or filters."
-    },
-    {
-      "timestamp": 1793840212.2638044,
-      "user": "Tell me a 5-word joke.",
-      "ai": "Why do programmers prefer dark mode? Light attracts bugs."
-    },
-    {
-      "timestamp": 1793840313.8642187,
-      "user": "Hello Zia, reply in 4 words",
-      "ai": "Four words"
-    },
-    {
-      "timestamp": 1793840322.1937006,
+      "timestamp": 1794361477.7902603,
       "user": "Give a quick hello",
-      "ai": "Hey there. What's on your mind today?"
+      "ai": "Glitch in neural connection: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'API key not valid. Please pass a v"
     },
     {
-      "timestamp": 1793840365.9201446,
+      "timestamp": 1794361498.4560714,
       "user": "Hello Zia, reply in 4 words",
-      "ai": ""
+      "ai": "Glitch in neural connection: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'API key not valid. Please pass a v"
     },
     {
-      "timestamp": 1793840375.946362,
+      "timestamp": 1794361500.0098422,
       "user": "Give a quick hello",
-      "ai": "Hey there. Good to see you again."
+      "ai": "Glitch in neural connection: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'API key not valid. Please pass a v"
     },
     {
-      "timestamp": 1793840399.3766987,
+      "timestamp": 1794361935.2983994,
       "user": "Hello Zia, reply in 4 words",
-      "ai": "Hey, what's up?"
+      "ai": "I'm right here with you. Operating in offline local mode."
     },
     {
-      "timestamp": 1793840489.439621,
-      "user": "Hello Zia, reply in 4 words",
-      "ai": "Hey, what's up?"
-    },
-    {
-      "timestamp": 1793840491.7441843,
+      "timestamp": 1794361937.52558,
       "user": "Give a quick hello",
-      "ai": "Hey, what's up?"
+      "ai": "I'm right here with you. Operating in offline local mode."
     },
     {
-      "timestamp": 1793840514.039878,
+      "timestamp": 1794362171.7449288,
       "user": "Hello Zia, reply in 4 words",
-      "ai": "Hey, what's up?"
+      "ai": "I'm right here with you. Operating in offline local mode."
     },
     {
-      "timestamp": 1793840519.747647,
+      "timestamp": 1794362173.5811296,
       "user": "Give a quick hello",
-      "ai": "Hey, what's up?"
+      "ai": "I'm right here with you. Operating in offline local mode."
     },
     {
-      "timestamp": 1793840846.7007704,
+      "timestamp": 1794362230.35071,
       "user": "Hello Zia, reply in 4 words",
-      "ai": "Hey, what is up?"
+      "ai": "I'm right here with you. Operating in offline local mode."
     },
     {
-      "timestamp": 1793840851.06234,
+      "timestamp": 1794362231.6776574,
       "user": "Give a quick hello",
-      "ai": "Hey, what's up?"
+      "ai": "I'm right here with you. Operating in offline local mode."
+    },
+    {
+      "timestamp": 1794362248.3433266,
+      "user": "Hello Zia, reply in 4 words",
+      "ai": "I'm right here with you. Operating in offline local mode."
+    },
+    {
+      "timestamp": 1794362251.1155787,
+      "user": "Give a quick hello",
+      "ai": "I'm right here with you. Operating in offline local mode."
+    },
+    {
+      "timestamp": 1794362397.7064052,
+      "user": "Hello Zia, reply in 4 words",
+      "ai": "I'm right here with you. Operating in offline local mode."
+    },
+    {
+      "timestamp": 1794362399.9652245,
+      "user": "Give a quick hello",
+      "ai": "I'm right here with you. Operating in offline local mode."
+    },
+    {
+      "timestamp": 1794362561.4037292,
+      "user": "change to spirte",
+      "ai": "I'm right here with you. Operating in offline local mode."
+    },
+    {
+      "timestamp": 1794362585.0036256,
+      "user": "whats ur name",
+      "ai": "I'm right here with you. Operating in offline local mode."
     }
   ],
   "prayer_log": [
@@ -254,6 +259,46 @@
       "timestamp": 1793840862.990322,
       "date": "2026-11-05",
       "time": "06:37 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1793853143.904736,
+      "date": "2026-11-05",
+      "time": "10:02 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1794361528.887858,
+      "date": "2026-11-11",
+      "time": "07:15 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1794361553.344886,
+      "date": "2026-11-11",
+      "time": "07:15 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1794362205.106504,
+      "date": "2026-11-11",
+      "time": "07:26 AM",
+      "location": "Palakkad, Kerala"
+    },
+    {
+      "prayer": "Subhi",
+      "status": "completed",
+      "timestamp": 1794362269.454544,
+      "date": "2026-11-11",
+      "time": "07:27 AM",
       "location": "Palakkad, Kerala"
     }
   ]

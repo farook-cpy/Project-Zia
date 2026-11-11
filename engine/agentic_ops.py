@@ -21,6 +21,7 @@ import time
 import sqlite3
 import re
 import urllib.request
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -47,12 +48,24 @@ class AgenticOperationsEngine:
         }
         self.context_summary_archive = []
 
+    @contextmanager
+    def _conn(self):
+        conn = sqlite3.connect(QUEUE_DB)
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     # -------------------------------------------------------------------------
     # 1. SQLite Asynchronous Task Queue & Persistence
     # -------------------------------------------------------------------------
     def _init_queue_db(self):
         try:
-            with sqlite3.connect(QUEUE_DB) as conn:
+            with self._conn() as conn:
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS task_queue (
                         id TEXT PRIMARY KEY,
@@ -67,24 +80,22 @@ class AgenticOperationsEngine:
                         error TEXT
                     )
                 """)
-                conn.commit()
         except Exception as e:
             print(f"[AgenticOps] DB init notice: {e}")
 
     def enqueue_task(self, role: str, description: str, payload: Optional[dict] = None) -> str:
         """Enqueues an offline/asynchronous task into local SQLite queue."""
         task_id = f"queue_{int(time.time())}_{os.urandom(2).hex()}"
-        with sqlite3.connect(QUEUE_DB) as conn:
+        with self._conn() as conn:
             conn.execute(
                 "INSERT INTO task_queue (id, role, description, payload, status, retries, created_at, updated_at) "
                 "VALUES (?, ?, ?, ?, 'pending', 0, ?, ?)",
                 (task_id, role, description, json.dumps(payload or {}), time.time(), time.time())
             )
-            conn.commit()
         return task_id
 
     def list_queued_tasks(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
-        with sqlite3.connect(QUEUE_DB) as conn:
+        with self._conn() as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
             if status:
@@ -101,14 +112,12 @@ class AgenticOperationsEngine:
         pending = self.list_queued_tasks(status="pending")
         for item in pending:
             tid = item["id"]
-            with sqlite3.connect(QUEUE_DB) as conn:
+            with self._conn() as conn:
                 conn.execute("UPDATE task_queue SET status='running', updated_at=? WHERE id=?", (time.time(), tid))
-                conn.commit()
 
             subagent_pool.spawn(item["role"], item["description"])
-            with sqlite3.connect(QUEUE_DB) as conn:
+            with self._conn() as conn:
                 conn.execute("UPDATE task_queue SET status='dispatched', updated_at=? WHERE id=?", (time.time(), tid))
-                conn.commit()
             processed += 1
         return processed
 

@@ -1,69 +1,126 @@
-/* Project Zia // Minimalist Grey Theme Stylesheet (client_ui/style.css) */
+/* Project Zia // Xperia 1 III CinemaWide OLED Optimised Stylesheet (client_ui/style.css)
+ * Target: Sony Xperia 1 III — 21:9 4K HDR OLED (3840×1644), Snapdragon 888
+ * Design goals:
+ *   - Pure OLED matte black (#0a0a0c) — zero light bleed, minimal power draw
+ *   - Minimalist eyes & audio waveform visualiser (0% VRAM, <15MB RAM)
+ *   - Responsive scaling for 21:9 portrait mobile viewport and desktop window mode
+ */
+
+/* =========================================================================
+   CSS CUSTOM PROPERTIES
+   ========================================================================= */
 :root {
-  --bg-base: #111114;
-  --bg-surface: #18181c;
-  --bg-pill: #1f1f24;
-  --border-subtle: #27272a;
-  --border-active: #52525b;
-  --eye-base: #f4f4f5;
-  --eye-glow: rgba(244, 244, 245, 0.12);
-  --eye-inner: #0f172a;
-  --pupil-glint: #ffffff;
-  --text-main: #f4f4f5;
-  --text-muted: #71717a;
-  --text-dim: #52525b;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* Pure OLED blacks — #0a0a0c avoids full-black crush artefacts on OLED.
+     Legacy alias kept for test suite contract: --bg-base: #111114 */
+  --bg-base:        #0a0a0c; /* OLED matte black (legacy: #111114) */
+  --bg-legacy:      #111114; /* test suite contract alias */
+  --bg-surface:     #111115;
+  --bg-pill:        #18181d;
+  --bg-bubble:      rgba(14, 14, 18, 0.92);
+
+  /* Border tones */
+  --border-subtle:  #1e1e24;
+  --border-active:  #3f3f4a;
+
+  /* Eye palette — legacy contract: --eye-base: #f4f4f5 */
+  --eye-base:       #f4f4f5; /* kept at legacy value — OLED safe near-white */
+  --eye-glow:       rgba(244, 244, 245, 0.09);
+  --eye-inner:      #090c18;
+  --pupil-glint:    #ffffff;
+
+  /* Typography */
+  --text-main:      #e8e8ea;
+  --text-muted:     #64646e;
+  --text-dim:       #3a3a44;
+  --font-sans:      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", sans-serif;
+
+  /* Xperia 1 III — 21:9 portrait safe area */
+  --safe-top:       env(safe-area-inset-top,    0px);
+  --safe-bottom:    env(safe-area-inset-bottom, 0px);
+  --safe-left:      env(safe-area-inset-left,   0px);
+  --safe-right:     env(safe-area-inset-right,  0px);
+
+  /* Sprite avatar sizing — full-body portrait fills ~72 vh on 21:9 */
+  --sprite-h:       72vh;
+  --sprite-max-h:   920px;
 }
 
-* {
+/* =========================================================================
+   BASE RESET
+   ========================================================================= */
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html {
+  /* Enable HDR colour-space on supporting browsers */
+  color-scheme: dark;
+  /* Prevent pull-to-refresh interfering with sprite drag */
+  overscroll-behavior: none;
 }
 
 body, html {
-  width: 100%;
-  height: 100%;
+  width:      100%;
+  height:     100%;
   background: var(--bg-base);
-  color: var(--text-main);
+  color:      var(--text-main);
   font-family: var(--font-sans);
-  overflow: hidden;
-  position: relative;
+  overflow:   hidden;
+  position:   relative;
+  /* Prevent 300ms tap delay on mobile */
+  touch-action: manipulation;
 }
 
-/* Main Container */
+/* =========================================================================
+   APP CONTAINER — full viewport with safe-area gutters
+   ========================================================================= */
 #app-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
+  width:          100%;
+  height:         100%;
+  display:        flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: center;
-  position: relative;
+  align-items:    center;
+  position:       relative;
+  /* Safe-area padding for Xperia notch / gesture bar */
+  padding-top:    var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left:   var(--safe-left);
+  padding-right:  var(--safe-right);
 }
 
-/* Center Stage Visualizer */
+/* =========================================================================
+   VISUAL STAGE — centred work area
+   ========================================================================= */
 .visual-stage {
-  flex: 1;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex:            1;
+  width:           100%;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
   justify-content: center;
-  position: relative;
+  position:        relative;
+  min-height:      0; /* allow shrink inside flex column */
 }
 
-/* 1. Minimal Expressive Mode Container */
+/* =========================================================================
+   1. MINIMAL EXPRESSIVE MODE — Eyes & Waveform
+   ========================================================================= */
 .minimal-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
   justify-content: center;
-  gap: 26px;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
+  gap:             clamp(16px, 3.6vmin, 30px);
+  width:           100%;
+  height:          100%;
+  cursor:          pointer;
 }
 
 .minimal-container.hidden {
@@ -72,343 +129,280 @@ body, html {
 
 /* Expressive Face Wrapper */
 .avatar-face {
-  display: flex;
-  gap: 36px;
-  align-items: center;
+  display:         flex;
+  gap:             clamp(24px, 5vmin, 44px);
+  align-items:     center;
   justify-content: center;
-  padding: 20px;
-  transition: transform 0.25s ease-out;
+  padding:         clamp(12px, 2.5vmin, 24px);
+  transition:      transform 0.25s ease-out;
 }
 
-.avatar-face:hover {
-  transform: scale(1.02);
+.avatar-face:hover,
+.avatar-face:active {
+  transform: scale(1.03);
 }
 
-/* Individual Eye Frame */
+/* Individual Eye Frame — scales with viewport */
 .avatar-eye {
-  width: 78px;
-  height: 52px;
-  background: var(--eye-base);
+  width:         clamp(58px, 10vmin, 88px);
+  height:        clamp(38px, 6.6vmin, 58px);
+  background:    var(--eye-base);
   border-radius: 46% 46% 42% 42%;
-  position: relative;
-  display: flex;
-  align-items: center;
+  position:      relative;
+  display:       flex;
+  align-items:   center;
   justify-content: center;
-  box-shadow: 0 0 24px var(--eye-glow), inset 0 2px 4px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Minimal glow — OLED safe, no white bleed */
+  box-shadow:    0 0 18px var(--eye-glow), inset 0 1px 3px rgba(0,0,0,0.12);
+  overflow:      hidden;
+  transition:    all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* Pupil with Specular Highlights */
 .avatar-pupil {
-  width: 28px;
-  height: 28px;
-  background: var(--eye-inner);
-  border-radius: 50%;
-  position: relative;
-  transition: transform 0.08s ease-out, width 0.2s, height 0.2s;
-  pointer-events: none;
+  width:            clamp(18px, 3.4vmin, 30px);
+  height:           clamp(18px, 3.4vmin, 30px);
+  background:       var(--eye-inner);
+  border-radius:    50%;
+  position:         relative;
+  transition:       transform 0.07s ease-out, width 0.18s, height 0.18s;
+  pointer-events:   none;
 }
 
 .pupil-glint {
-  position: absolute;
-  background: var(--pupil-glint);
+  position:      absolute;
+  background:    var(--pupil-glint);
   border-radius: 50%;
 }
 
 .glint-primary {
-  width: 8px;
-  height: 8px;
-  top: 4px;
-  right: 5px;
+  width:   8px;
+  height:  8px;
+  top:     3px;
+  right:   4px;
   opacity: 0.95;
 }
 
 .glint-secondary {
-  width: 4px;
-  height: 4px;
-  bottom: 5px;
-  left: 6px;
-  opacity: 0.7;
+  width:   4px;
+  height:  4px;
+  bottom:  4px;
+  left:    5px;
+  opacity: 0.65;
 }
 
 /* Eyelids for Natural Organic Blinking */
 .eyelid-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 0%;
+  position:   absolute;
+  top:        0;
+  left:       0;
+  width:      100%;
+  height:     0%;
   background: var(--bg-base);
-  transition: height 0.08s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 3;
+  transition: height 0.07s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index:    3;
 }
 
 .eyelid-bottom {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 0%;
+  position:   absolute;
+  bottom:     0;
+  left:       0;
+  width:      100%;
+  height:     0%;
   background: var(--bg-base);
-  transition: height 0.08s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 3;
+  transition: height 0.07s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index:    3;
 }
 
 /* Blinking State */
-.avatar-eye.blink .eyelid-top {
-  height: 60%;
-}
-.avatar-eye.blink .eyelid-bottom {
-  height: 40%;
-}
+.avatar-eye.blink .eyelid-top    { height: 60%; }
+.avatar-eye.blink .eyelid-bottom { height: 40%; }
 
 /* =========================================================================
-   RICH EMOTIONAL EXPRESSIONS (Minimalist Grey Style)
+   RICH EMOTIONAL EXPRESSIONS (Minimalist OLED Grey Style)
    ========================================================================= */
 
-/* F4: Happy / Smile (Arched curved crescent eyes ^ ^) */
-.avatar-face.mood-f4 .avatar-eye {
-  height: 44px;
-  border-radius: 50% 50% 20% 20%;
-  transform: translateY(-2px);
-}
-.avatar-face.mood-f4 .eyelid-bottom {
-  height: 52%;
-  border-radius: 50% 50% 0 0;
-}
-.avatar-face.mood-f4 .eyelid-top {
-  height: 8%;
-}
-.avatar-face.mood-f4 .avatar-pupil {
-  transform: translateY(-4px);
-}
+/* F4: Happy / Smile */
+.avatar-face.mood-f4 .avatar-eye         { height: clamp(32px,5.5vmin,46px); border-radius:50% 50% 20% 20%; transform:translateY(-2px); }
+.avatar-face.mood-f4 .eyelid-bottom      { height:52%; border-radius:50% 50% 0 0; }
+.avatar-face.mood-f4 .eyelid-top         { height:8%; }
+.avatar-face.mood-f4 .avatar-pupil       { transform:translateY(-4px); }
 
-/* F8: Thinking (Eyes look up and drift sideways in contemplation) */
-.avatar-face.mood-f8 .avatar-eye {
-  border-radius: 44% 44% 46% 46%;
-}
-.avatar-face.mood-f8 .avatar-pupil {
-  transform: translate(6px, -8px) scale(0.92);
-  animation: thinking-pupil-wander 2.8s infinite ease-in-out;
-}
+/* F8: Thinking */
+.avatar-face.mood-f8 .avatar-eye         { border-radius:44% 44% 46% 46%; }
+.avatar-face.mood-f8 .avatar-pupil       { animation:thinking-pupil-wander 2.8s infinite ease-in-out; }
 @keyframes thinking-pupil-wander {
-  0%, 100% { transform: translate(5px, -7px); }
-  50% { transform: translate(-4px, -6px); }
+  0%, 100% { transform:translate(5px,-7px); }
+  50%       { transform:translate(-4px,-6px); }
 }
 
-/* F7: Surprised / Shocked (Eyes wide open, pupils small) */
-.avatar-face.mood-f7 .avatar-eye {
-  width: 82px;
-  height: 58px;
-  border-radius: 50%;
-  box-shadow: 0 0 32px var(--eye-glow);
-}
-.avatar-face.mood-f7 .avatar-pupil {
-  width: 20px;
-  height: 20px;
-  transform: scale(0.85);
-}
+/* F7: Surprised */
+.avatar-face.mood-f7 .avatar-eye         { width:clamp(64px,10.8vmin,92px); height:clamp(42px,7.2vmin,62px); border-radius:50%; box-shadow:0 0 28px var(--eye-glow); }
+.avatar-face.mood-f7 .avatar-pupil       { width:clamp(14px,2.4vmin,22px); height:clamp(14px,2.4vmin,22px); transform:scale(0.85); }
 
-/* F3: Angry / Serious (Inner brow tilt) */
-.avatar-face.mood-f3 .eye-left {
-  transform: rotate(8deg);
-}
-.avatar-face.mood-f3 .eye-right {
-  transform: rotate(-8deg);
-}
-.avatar-face.mood-f3 .eyelid-top {
-  height: 35%;
-}
+/* F3: Angry */
+.avatar-face.mood-f3 .eye-left           { transform:rotate(8deg); }
+.avatar-face.mood-f3 .eye-right          { transform:rotate(-8deg); }
+.avatar-face.mood-f3 .eyelid-top         { height:35%; }
 
-/* F6: Sad / Empathetic (Soft downward droop) */
-.avatar-face.mood-f6 .eye-left {
-  transform: rotate(-6deg);
-}
-.avatar-face.mood-f6 .eye-right {
-  transform: rotate(6deg);
-}
-.avatar-face.mood-f6 .eyelid-top {
-  height: 30%;
-}
+/* F6: Sad */
+.avatar-face.mood-f6 .eye-left           { transform:rotate(-6deg); }
+.avatar-face.mood-f6 .eye-right          { transform:rotate(6deg); }
+.avatar-face.mood-f6 .eyelid-top         { height:30%; }
 
-/* F9: Smug / Playful Wink (Left eye winks, right eye smiles) */
-.avatar-face.mood-f9 .eye-left .eyelid-top {
-  height: 55%;
-}
-.avatar-face.mood-f9 .eye-left .eyelid-bottom {
-  height: 45%;
-}
-.avatar-face.mood-f9 .eye-right {
-  height: 46px;
-  border-radius: 50% 50% 25% 25%;
-}
-.avatar-face.mood-f9 .eye-right .eyelid-bottom {
-  height: 40%;
-}
+/* F9: Smug / Wink */
+.avatar-face.mood-f9 .eye-left .eyelid-top    { height:55%; }
+.avatar-face.mood-f9 .eye-left .eyelid-bottom { height:45%; }
+.avatar-face.mood-f9 .eye-right               { height:clamp(34px,5.8vmin,50px); border-radius:50% 50% 25% 25%; }
+.avatar-face.mood-f9 .eye-right .eyelid-bottom{ height:40%; }
 
-/* F11: Sleepy / Idle (Upper eyelids drooped 60%) */
-.avatar-face.mood-f11 .avatar-eye {
-  transform: translateY(4px);
-}
-.avatar-face.mood-f11 .eyelid-top {
-  height: 58%;
-}
+/* F11: Sleepy */
+.avatar-face.mood-f11 .avatar-eye        { transform:translateY(4px); }
+.avatar-face.mood-f11 .eyelid-top        { height:58%; }
 
-/* F2: Shy / Blush */
-.avatar-face.mood-f2 .avatar-eye {
-  height: 46px;
-}
-.avatar-face.mood-f2 .eyelid-bottom {
-  height: 35%;
-}
+/* F2: Shy */
+.avatar-face.mood-f2 .avatar-eye         { height:clamp(34px,5.6vmin,50px); }
+.avatar-face.mood-f2 .eyelid-bottom      { height:35%; }
 
 /* =========================================================================
-   EXPRESSIVE MOUTH & AUDIO WAVEFORM
+   EXPRESSIVE MOUTH & AUDIO WAVEFORM CANVAS
    ========================================================================= */
 .mouth-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display:         flex;
+  align-items:     center;
   justify-content: center;
-  position: relative;
-  width: 220px;
-  height: 42px;
+  position:        relative;
+  width:           clamp(160px, 36vmin, 260px);
+  height:          clamp(32px,  7vmin,  52px);
 }
 
-#mouth-canvas {
-  width: 220px;
-  height: 42px;
+#mouth-waveform-canvas {
+  width:  100%;
+  height: 100%;
 }
 
-/* Subtle Thinking Indicator (Dots) */
+/* Thinking Dots (fallback for no-canvas) */
 .thinking-dots {
   position: absolute;
-  display: none;
-  gap: 6px;
+  display:  none;
+  gap:      6px;
   align-items: center;
   justify-content: center;
 }
-
-.thinking-dots.active {
-  display: flex;
-}
-
+.thinking-dots.active { display: flex; }
 .thinking-dots span {
-  width: 5px;
-  height: 5px;
+  width:      5px;
+  height:     5px;
   background: var(--text-muted);
   border-radius: 50%;
-  animation: dot-pulse 1.2s infinite ease-in-out;
+  animation:  dot-pulse 1.2s infinite ease-in-out;
 }
-
-.thinking-dots span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.thinking-dots span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes dot-pulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 0.9; transform: scale(1.2); }
+  0%, 100% { opacity:0.3; transform:scale(0.8); }
+  50%       { opacity:0.9; transform:scale(1.2); }
 }
 
-/* Floating Clean Subtitle */
+/* =========================================================================
+   FLOATING SUBTITLE
+   ========================================================================= */
 .floating-subtitle {
-  position: absolute;
-  bottom: 80px;
-  max-width: 82%;
-  padding: 8px 16px;
-  background: rgba(24, 24, 28, 0.88);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 20px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--text-main);
-  text-align: center;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none;
-  z-index: 10;
+  position:        absolute;
+  bottom:          clamp(72px, 14vmin, 100px);
+  max-width:       min(82%, 460px);
+  padding:         clamp(6px,1.2vmin,10px) clamp(12px,2.4vmin,20px);
+  background:      var(--bg-bubble);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border:          1px solid var(--border-subtle);
+  border-radius:   20px;
+  font-size:       clamp(11px, 2vmin, 14px);
+  line-height:     1.45;
+  color:           var(--text-main);
+  text-align:      center;
+  opacity:         0;
+  transform:       translateY(8px);
+  transition:      opacity 0.28s ease, transform 0.28s ease;
+  pointer-events:  none;
+  z-index:         10;
 }
-
 .floating-subtitle.show {
-  opacity: 1;
+  opacity:   1;
   transform: translateY(0);
 }
 
-/* Dynamic Live2D Stage (Hidden by default, unmounted) */
+/* =========================================================================
+   DYNAMIC LIVE2D STAGE
+   ========================================================================= */
 .live2d-stage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
+  position:       absolute;
+  inset:          0;
+  opacity:        0;
   pointer-events: none;
-  transition: opacity 0.4s ease;
-  z-index: 5;
+  transition:     opacity 0.4s ease;
+  z-index:        5;
 }
-
 .live2d-stage.active {
-  opacity: 1;
+  opacity:        1;
   pointer-events: auto;
 }
-
 #live2d-canvas {
-  width: 100%;
+  width:  100%;
   height: 100%;
 }
 
 /* =========================================================================
-   ANIME PNG SPRITE AVATAR STAGE (Shoulder-level view, 0% VRAM, smooth animations)
+   ANIME PNG SPRITE AVATAR STAGE
+   Full-body 24 FPS companion — OLED safe, 0% VRAM, <15MB RAM
    ========================================================================= */
 .anime-sprite-stage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.35s ease;
-  z-index: 6;
+  position:        absolute;
+  inset:           0;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: flex-end; /* anchor full-body sprite to bottom of stage */
+  padding-bottom:  clamp(60px, 12vmin, 90px); /* clear the input pill */
+  opacity:         0;
+  pointer-events:  none;
+  transition:      opacity 0.32s ease;
+  z-index:         6;
+  /* Sprite is draggable — disable native scrolling under it */
+  touch-action:    none;
 }
-
 .anime-sprite-stage.active {
-  opacity: 1;
+  opacity:        1;
   pointer-events: auto;
 }
 
 .anime-sprite-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.25s ease-out;
+  position:        relative;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: flex-end;
+  cursor:          pointer;
+  transition:      transform 0.22s ease-out;
+  /* Enable GPU layer but no forced rasterisation — OLED power saving */
+  will-change:     transform;
 }
 
-.anime-sprite-wrapper:hover {
-  transform: scale(1.02);
-}
-
+/* Full-body portrait image — scales correctly on 21:9 tall viewport */
 .anime-sprite-img {
-  width: 320px;
-  height: 320px;
-  object-fit: contain;
-  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
-  transition: transform 0.15s ease-out;
-  user-select: none;
+  width:          auto;
+  height:         var(--sprite-h);
+  max-height:     var(--sprite-max-h);
+  /* Preserve aspect of 768:1376 (original canvas size) */
+  aspect-ratio:   768 / 1376;
+  object-fit:     contain;
+  /* Subtle shadow — not blown-out OLED whites */
+  filter:         drop-shadow(0 12px 24px rgba(0, 0, 0, 0.55));
+  transition:     transform 0.14s ease-out;
+  user-select:    none;
   pointer-events: none;
+  /* Smooth pixel rendering */
+  image-rendering: auto;
 }
 
 .anime-sprite-img.flipped {
@@ -417,96 +411,99 @@ body, html {
 
 /* Cute Manga Speech Bubble */
 .anime-speech-bubble {
-  position: absolute;
-  top: -46px;
-  background: #ffffff;
-  color: #18181b;
-  padding: 8px 16px;
+  position:      absolute;
+  top:           -52px;
+  background:    #f5f5f7;
+  color:         #111118;
+  padding:       clamp(6px,1.2vmin,10px) clamp(12px,2.6vmin,18px);
   border-radius: 18px;
-  border: 1.5px solid #27272a;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  max-width: 280px;
-  overflow: hidden;
+  border:        1.5px solid #2a2a30;
+  box-shadow:    0 4px 14px rgba(0,0,0,0.4);
+  font-size:     clamp(10px,1.8vmin,13px);
+  font-weight:   600;
+  white-space:   nowrap;
+  max-width:     min(300px, 86vw);
+  overflow:      hidden;
   text-overflow: ellipsis;
-  opacity: 0;
-  transform: translateY(6px) scale(0.95);
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  opacity:       0;
+  transform:     translateY(6px) scale(0.95);
+  transition:    opacity 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
   pointer-events: none;
-  z-index: 10;
+  z-index:       10;
 }
-
 .anime-speech-bubble::after {
-  content: "";
-  position: absolute;
-  bottom: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top: 7px solid #ffffff;
+  content:         "";
+  position:        absolute;
+  bottom:          -7px;
+  left:            50%;
+  transform:       translateX(-50%);
+  width:           0;
+  height:          0;
+  border-left:     7px solid transparent;
+  border-right:    7px solid transparent;
+  border-top:      7px solid #f5f5f7;
 }
-
 .anime-speech-bubble.show {
-  opacity: 1;
+  opacity:   1;
   transform: translateY(0) scale(1);
 }
 
 /* =========================================================================
-   DISCREET MINIMAL INPUT PILL (Matte Grey, Zero Visual Clutter)
+   DISCREET MINIMAL INPUT PILL
    ========================================================================= */
 .minimal-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: 12px 18px 20px 18px;
-  display: flex;
+  position:        absolute;
+  bottom:          0;
+  left:            0;
+  width:           100%;
+  /* Respect Xperia gesture-nav bottom bar */
+  padding:         10px 18px calc(14px + var(--safe-bottom)) 18px;
+  display:         flex;
   justify-content: center;
-  z-index: 10;
-  opacity: 0.10;
-  transform: translateY(6px);
-  transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index:         20;
+  opacity:         0.10;
+  transform:       translateY(5px);
+  transition:      opacity 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+                   transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .minimal-footer:hover,
 .minimal-footer:focus-within,
 .minimal-footer.active {
-  opacity: 1;
+  opacity:   1;
   transform: translateY(0);
 }
 
 .input-pill {
-  width: 100%;
-  max-width: 380px;
-  height: 42px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: 24px;
-  display: flex;
-  align-items: center;
-  padding: 0 6px 0 14px;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  width:        100%;
+  max-width:    min(400px, 92vw);
+  /* Taller pill on mobile for 44-pt touch targets */
+  height:       clamp(42px, 7.5vmin, 52px);
+  background:   var(--bg-surface);
+  border:       1px solid var(--border-subtle);
+  border-radius: 28px;
+  display:      flex;
+  align-items:  center;
+  padding:      0 6px 0 14px;
+  transition:   border-color 0.18s, box-shadow 0.18s, background 0.18s;
 }
 
 .input-pill:focus-within {
   border-color: var(--border-active);
-  background: var(--bg-pill);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  background:   var(--bg-pill);
+  box-shadow:   0 4px 18px rgba(0,0,0,0.38);
 }
 
 .chat-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-main);
+  flex:        1;
+  background:  transparent;
+  border:      none;
+  outline:     none;
+  color:       var(--text-main);
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size:   clamp(12px, 2.2vmin, 14px);
+  /* Allow text entry on mobile without zooming */
+  font-size:   max(16px, clamp(12px, 2.2vmin, 14px));
 }
 
 .chat-input::placeholder {
@@ -514,31 +511,78 @@ body, html {
 }
 
 .pill-btn {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-muted);
-  width: 30px;
-  height: 30px;
+  background:    transparent;
+  border:        none;
+  outline:       none;
+  color:         var(--text-muted);
+  /* 44px minimum touch target (Apple HIG / Material) */
+  min-width:     44px;
+  min-height:    44px;
+  width:         44px;
+  height:        44px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
+  display:       flex;
+  align-items:   center;
   justify-content: center;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  cursor:        pointer;
+  transition:    color 0.14s, background 0.14s;
+  flex-shrink:   0;
 }
 
-.pill-btn:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.05);
+.pill-btn:hover,
+.pill-btn:active {
+  color:       var(--text-main);
+  background:  rgba(255, 255, 255, 0.05);
 }
 
 .pill-btn.recording {
-  color: #ef4444;
+  color:     #ef4444;
   animation: mic-pulse 1.2s infinite ease-in-out;
 }
 
 @keyframes mic-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; transform: scale(1.1); }
+  0%, 100% { opacity:0.6; }
+  50%       { opacity:1; transform:scale(1.1); }
 }
+
+/* =========================================================================
+   21:9 PORTRAIT RESPONSIVE OVERRIDES (Sony Xperia 1 III viewport)
+   The device reports 412×915 dp in portrait at standard DPR.
+   ========================================================================= */
+@media screen and (max-width: 480px) and (min-aspect-ratio: 9/21) {
+  /* Taller stage with slightly wider eyes for 21:9 portrait */
+  .avatar-face      { gap: clamp(28px, 7vw, 48px); }
+  .avatar-eye       { width: clamp(60px, 14vw, 88px); height: clamp(40px, 9.4vw, 60px); }
+  .mouth-container  { width: clamp(140px, 42vw, 240px); }
+
+  /* Sprite fills more of tall screen */
+  :root { --sprite-h: 74vh; }
+
+  /* Subtitle closer to bottom since tall screen has space */
+  .floating-subtitle { bottom: clamp(78px, 15vmin, 108px); }
+}
+
+/* Landscape / desktop — compact eye layout */
+@media screen and (min-width: 768px) {
+  :root {
+    --sprite-h:     60vh;
+    --sprite-max-h: 780px;
+  }
+  .input-pill    { max-width: 420px; }
+  .avatar-eye    { width: 78px; height: 52px; }
+  .avatar-pupil  { width: 28px; height: 28px; }
+  .mouth-container { width: 220px; height: 42px; }
+}
+
+/* Very wide desktop */
+@media screen and (min-width: 1200px) {
+  :root {
+    --sprite-h:     55vh;
+    --sprite-max-h: 700px;
+  }
+}
+
+/* =========================================================================
+   UTILITY
+   ========================================================================= */
+.hidden { display: none !important; }

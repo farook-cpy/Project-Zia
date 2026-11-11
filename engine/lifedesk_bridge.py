@@ -10,6 +10,7 @@ import os
 import re
 import time
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
@@ -26,13 +27,26 @@ FINANCE_DB = Path(os.environ.get("LIFEDESK_FINANCE_DB", str(LIFEDESK_DIR / "fina
 class LifeDeskBridge:
     """Coordinates local SQLite syncing with LifeDesk productivity & personal finance databases."""
 
+    @contextmanager
+    def _conn(self, db_path: Path):
+        """Context manager ensuring connection is always committed and closed cleanly."""
+        conn = sqlite3.connect(str(db_path))
+        try:
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def __init__(self):
         self._init_databases()
 
     def _init_databases(self):
         """Initializes tables for habits and financial ledgers if they do not exist with SQLite WAL acceleration."""
         # 1. Habits Database
-        with sqlite3.connect(HABITS_DB) as conn:
+        with self._conn(HABITS_DB) as conn:
             conn.execute("PRAGMA journal_mode = WAL;")
             conn.execute("PRAGMA synchronous = NORMAL;")
             conn.execute("PRAGMA temp_store = MEMORY;")
@@ -59,10 +73,9 @@ class LifeDeskBridge:
                     FOREIGN KEY(habit_id) REFERENCES habits(id)
                 )
             """)
-            conn.commit()
 
         # Seed default core habits if empty
-        with sqlite3.connect(HABITS_DB) as conn:
+        with self._conn(HABITS_DB) as conn:
             cur = conn.cursor()
             cur.execute("SELECT COUNT(*) FROM habits")
             if cur.fetchone()[0] == 0:
@@ -79,10 +92,9 @@ class LifeDeskBridge:
                     "INSERT INTO habits (name, category, target_per_day, unit, created_at) VALUES (?, ?, ?, ?, ?)",
                     defaults
                 )
-                conn.commit()
 
         # 2. Personal Finance Database
-        with sqlite3.connect(FINANCE_DB) as conn:
+        with self._conn(FINANCE_DB) as conn:
             conn.execute("PRAGMA journal_mode = WAL;")
             conn.execute("PRAGMA synchronous = NORMAL;")
             conn.execute("PRAGMA temp_store = MEMORY;")
@@ -107,7 +119,6 @@ class LifeDeskBridge:
                     timestamp REAL
                 )
             """)
-            conn.commit()
 
     # =========================================================================
     # Habit Tracking Methods
@@ -118,7 +129,7 @@ class LifeDeskBridge:
         now_ts = time.time()
         clean_name = habit_name.strip()
 
-        with sqlite3.connect(HABITS_DB) as conn:
+        with self._conn(HABITS_DB) as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
 
@@ -142,7 +153,6 @@ class LifeDeskBridge:
                 "INSERT INTO habit_logs (habit_id, habit_name, value, note, date, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
                 (habit_id, canonical_name, value, note, today_str, now_ts)
             )
-            conn.commit()
 
         streak_info = self.get_habit_streak(canonical_name)
         return {
@@ -157,7 +167,7 @@ class LifeDeskBridge:
 
     def get_habit_streak(self, habit_name: str) -> Dict[str, Any]:
         """Calculates consecutive daily streak for a specific habit."""
-        with sqlite3.connect(HABITS_DB) as conn:
+        with self._conn(HABITS_DB) as conn:
             cur = conn.cursor()
             cur.execute("""
                 SELECT DISTINCT date FROM habit_logs
@@ -201,7 +211,7 @@ class LifeDeskBridge:
 
     def get_all_habit_streaks(self) -> List[Dict[str, Any]]:
         """Returns streak analysis across all registered habits."""
-        with sqlite3.connect(HABITS_DB) as conn:
+        with self._conn(HABITS_DB) as conn:
             cur = conn.cursor()
             cur.execute("SELECT name, unit, category FROM habits ORDER BY name ASC")
             habits = cur.fetchall()
@@ -226,13 +236,12 @@ class LifeDeskBridge:
         now_ts = time.time()
         clean_cat = category.strip().lower() or "general"
 
-        with sqlite3.connect(FINANCE_DB) as conn:
+        with self._conn(FINANCE_DB) as conn:
             cur = conn.cursor()
             cur.execute(
                 "INSERT INTO expenses (amount, category, note, date, timestamp) VALUES (?, ?, ?, ?, ?)",
                 (amount, clean_cat, note, today_str, now_ts)
             )
-            conn.commit()
             expense_id = cur.lastrowid
 
         today_total = self.get_daily_expense_total()
@@ -252,13 +261,12 @@ class LifeDeskBridge:
         today_str = date.today().isoformat()
         now_ts = time.time()
 
-        with sqlite3.connect(FINANCE_DB) as conn:
+        with self._conn(FINANCE_DB) as conn:
             cur = conn.cursor()
             cur.execute(
                 "INSERT INTO income (amount, source, note, date, timestamp) VALUES (?, ?, ?, ?, ?)",
                 (amount, source.strip().lower(), note, today_str, now_ts)
             )
-            conn.commit()
 
         return {
             "success": True,
@@ -271,7 +279,7 @@ class LifeDeskBridge:
     def get_daily_expense_total(self, target_date: Optional[str] = None) -> float:
         """Returns total spent on a given date (defaults to today)."""
         d_str = target_date or date.today().isoformat()
-        with sqlite3.connect(FINANCE_DB) as conn:
+        with self._conn(FINANCE_DB) as conn:
             cur = conn.cursor()
             cur.execute("SELECT SUM(amount) FROM expenses WHERE date = ?", (d_str,))
             total = cur.fetchone()[0]
@@ -280,7 +288,7 @@ class LifeDeskBridge:
     def get_monthly_summary(self, year_month: Optional[str] = None) -> Dict[str, Any]:
         """Generates category-wise expense breakdown for the active month (YYYY-MM)."""
         ym = year_month or date.today().strftime("%Y-%m")
-        with sqlite3.connect(FINANCE_DB) as conn:
+        with self._conn(FINANCE_DB) as conn:
             cur = conn.cursor()
             cur.execute("""
                 SELECT category, SUM(amount), COUNT(*) 
@@ -308,7 +316,7 @@ class LifeDeskBridge:
 
     def list_recent_transactions(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Retrieves latest expense transactions."""
-        with sqlite3.connect(FINANCE_DB) as conn:
+        with self._conn(FINANCE_DB) as conn:
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
             cur.execute("SELECT * FROM expenses ORDER BY id DESC LIMIT ?", (limit,))

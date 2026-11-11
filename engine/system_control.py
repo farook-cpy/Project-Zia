@@ -3,6 +3,7 @@ import os
 import time
 import subprocess
 import shutil
+import json
 from pathlib import Path
 import psutil
 
@@ -18,9 +19,44 @@ def _get_pyautogui():
             _pyautogui = None
     return _pyautogui
 
+# ---------------------------------------------------------------------------
+# Android / Termux platform detection helpers
+# ---------------------------------------------------------------------------
+
+def _is_android() -> bool:
+    """Returns True when running inside Termux on Android."""
+    return (
+        os.path.isdir("/data/data/com.termux")
+        or os.environ.get("TERMUX_MODE", "") == "1"
+        or os.environ.get("PLATFORM", "") == "android"
+    )
+
+def _termux_cmd(cmd: list[str], timeout: int = 5) -> dict:
+    """
+    Runs a Termux:API CLI command (e.g. termux-battery-status).
+    Returns {"success": bool, "output": str, "json": dict|None}.
+    """
+    if not shutil.which(cmd[0]):
+        return {"success": False, "output": f"{cmd[0]} not found", "json": None}
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        raw = res.stdout.strip()
+        parsed = None
+        try:
+            parsed = json.loads(raw)
+        except Exception:
+            pass
+        return {"success": res.returncode == 0, "output": raw, "json": parsed}
+    except subprocess.TimeoutExpired:
+        return {"success": False, "output": f"{cmd[0]} timed out", "json": None}
+    except Exception as exc:
+        return {"success": False, "output": str(exc), "json": None}
+
+
 class SystemController:
     def __init__(self):
         self.os_type = sys.platform
+        self.is_android = _is_android()
 
     def execute_terminal(self, command: str, run_as_admin: bool = False) -> dict:
         """
@@ -269,112 +305,6 @@ class SystemController:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    def get_system_health(self) -> dict:
-        """
-        Gathers comprehensive CPU, RAM, Disk, Process, and Battery diagnostics.
-        """
-        cpu_pct = psutil.cpu_percent(interval=0.2)
-        ram = psutil.virtual_memory()
-        disk = psutil.disk_usage("/")
-
-        battery = None
-        try:
-            b = psutil.sensors_battery()
-            if b:
-                battery = {"percent": b.percent, "plugged_in": b.power_plugged}
-        except Exception:
-            pass
-
-        # Top 3 CPU processes
-        top_procs = []
-        try:
-            for p in sorted(psutil.process_iter(['name', 'cpu_percent', 'memory_percent']),
-                            key=lambda p: p.info.get('cpu_percent', 0) or 0,
-                            reverse=True)[:4]:
-                name = p.info.get('name')
-                cpu = p.info.get('cpu_percent')
-                mem = p.info.get('memory_percent')
-                if name and cpu is not None and mem is not None:
-                    top_procs.append(f"{name} (CPU: {cpu:.1f}%, RAM: {mem:.1f}%)")
-        except Exception:
-            pass
-
-        # Swap memory diagnostics (Crucial for 2007 MacBook Pro with 2GB RAM)
-        swap = psutil.swap_memory()
-
-        # Uptime
-        uptime_sec = int(time.time() - psutil.boot_time())
-        hours = uptime_sec // 3600
-        mins = (uptime_sec % 3600) // 60
-        uptime_str = f"{hours}h {mins}m"
-
-        # Core Temperature
-        cpu_temp = None
-        try:
-            from engine.heartbeat import heartbeat_engine
-            cpu_temp = heartbeat_engine.get_cpu_temperature()
-        except Exception:
-            pass
-
-        # Quick ping test for internet connection
-        ping_ok = True
-        try:
-            param = "-n 1" if self.os_type == "win32" else "-c 1"
-            res = subprocess.run(f"ping {param} 8.8.8.8", shell=True, capture_output=True, timeout=2)
-            ping_ok = (res.returncode == 0)
-        except Exception:
-            ping_ok = False
-
-        return {
-            "cpu_percent": cpu_pct,
-            "cpu_temp": cpu_temp,
-            "ram_total_gb": round(ram.total / (1024**3), 1),
-            "ram_used_gb": round(ram.used / (1024**3), 1),
-            "ram_percent": ram.percent,
-            "swap_used_mb": round(swap.used / (1024**2), 1),
-            "swap_total_mb": round(swap.total / (1024**2), 1),
-            "swap_percent": swap.percent,
-            "disk_free_gb": round(disk.free / (1024**3), 1),
-            "uptime": uptime_str,
-            "battery": battery,
-            "top_processes": top_procs,
-            "internet_connected": ping_ok
-        }
-
-    def troubleshoot(self) -> str:
-        """
-        Analyzes system metrics and returns an actionable diagnosis.
-        """
-        health = self.get_system_health()
-        issues = []
-        advice = []
-
-        if health["cpu_percent"] > 85:
-            issues.append(f"High CPU load: {health['cpu_percent']}%")
-            if health["top_processes"]:
-                advice.append(f"Heavy processes: {', '.join(health['top_processes'][:2])}")
-
-        if health["ram_percent"] > 85:
-            issues.append(f"RAM memory bottleneck: {health['ram_percent']}% used ({health['ram_used_gb']}GB / {health['ram_total_gb']}GB)")
-            advice.append("Consider closing background tabs or heavy apps.")
-
-        if not health["internet_connected"]:
-            issues.append("No internet connection detected (ping to 8.8.8.8 failed).")
-            advice.append("Check your Wi-Fi or router settings.")
-
-        if health["disk_free_gb"] < 5.0:
-            issues.append(f"Low disk storage: only {health['disk_free_gb']}GB remaining.")
-            advice.append("Run 'organize files' or clear temporary files.")
-
-        if not issues:
-            return (
-                f"Your device is running smoothly! CPU is at {health['cpu_percent']}%, "
-                f"RAM usage is {health['ram_percent']}% ({health['ram_used_gb']}GB used), "
-                f"and internet connectivity is healthy."
-            )
-        else:
-            return f"Found {len(issues)} issues: " + " | ".join(issues) + ". " + " ".join(advice)
-
     # -------------------------------------------------------------
     # 11. Partition & Mount Manager
     # -------------------------------------------------------------
@@ -550,6 +480,287 @@ class SystemController:
             except Exception as e:
                 return {"success": False, "error": str(e)}
         return {"success": False, "message": "Audio route switching is designed for PulseAudio/PipeWire on Linux."}
+
+    # =========================================================================
+    # Android / Termux — Hardware & Battery Telemetry
+    # =========================================================================
+
+    def get_battery_status(self) -> dict:
+        """
+        Returns battery info as a unified dict across all platforms.
+        On Android (Termux), queries `termux-battery-status` for precise data
+        including temperature, health, and plug type.
+        On Linux/Windows, falls back to psutil.sensors_battery().
+        """
+        # --- Android path ---
+        if self.is_android:
+            result = _termux_cmd(["termux-battery-status"])
+            if result["success"] and result["json"]:
+                d = result["json"]
+                return {
+                    "percent": d.get("percentage", None),
+                    "plugged_in": d.get("status", "").upper() == "CHARGING",
+                    "status": d.get("status", "UNKNOWN"),
+                    "health": d.get("health", "UNKNOWN"),
+                    "temperature_c": d.get("temperature", None),
+                    "plug_type": d.get("plugged", "UNPLUGGED"),
+                    "source": "termux-battery-status",
+                }
+            # Termux API unavailable — still return a minimal dict
+            return {"percent": None, "plugged_in": None, "status": "UNAVAILABLE",
+                    "health": "UNKNOWN", "temperature_c": None, "source": "unavailable"}
+
+        # --- Desktop path ---
+        try:
+            b = psutil.sensors_battery()
+            if b:
+                return {
+                    "percent": b.percent,
+                    "plugged_in": b.power_plugged,
+                    "status": "CHARGING" if b.power_plugged else "DISCHARGING",
+                    "health": "UNKNOWN",
+                    "temperature_c": None,
+                    "source": "psutil",
+                }
+        except Exception:
+            pass
+        return {"percent": None, "plugged_in": None, "status": "UNAVAILABLE",
+                "health": "UNKNOWN", "temperature_c": None, "source": "unavailable"}
+
+    def vibrate(self, duration_ms: int = 300) -> dict:
+        """
+        Triggers haptic vibration.
+        Android: termux-vibrate  |  Windows/Linux: not supported (silent).
+        """
+        if self.is_android:
+            result = _termux_cmd(["termux-vibrate", "-d", str(duration_ms)])
+            return {"success": result["success"], "platform": "android",
+                    "duration_ms": duration_ms}
+        return {"success": False, "platform": self.os_type,
+                "message": "Vibration not supported on this platform."}
+
+    def get_android_volume(self) -> dict:
+        """
+        Reads current Android media volume via termux-volume (if available).
+        """
+        if self.is_android:
+            result = _termux_cmd(["termux-volume"])
+            if result["success"] and result["json"]:
+                return {"success": True, "volumes": result["json"]}
+            return {"success": False, "message": "termux-volume unavailable"}
+        return {"success": False, "message": "Android-only feature."}
+
+    def set_android_volume(self, stream: str = "music", volume: int = 70) -> dict:
+        """
+        Sets Android audio stream volume via termux-volume.
+        stream: music | call | ring | alarm | notification | system
+        volume: 0-100 (clamped to Android's 0–15 scale internally).
+        """
+        if self.is_android:
+            result = _termux_cmd(["termux-volume", stream, str(volume)])
+            return {"success": result["success"], "stream": stream, "volume": volume}
+        return {"success": False, "message": "Android-only feature."}
+
+    def get_android_wifi_info(self) -> dict:
+        """Returns Wi-Fi connection info via termux-wifi-connectioninfo."""
+        if self.is_android:
+            result = _termux_cmd(["termux-wifi-connectioninfo"])
+            if result["success"] and result["json"]:
+                return {"success": True, "wifi": result["json"]}
+        return {"success": False, "message": "Not on Android or termux-wifi-connectioninfo unavailable."}
+
+    def android_tts(self, text: str, rate: float = 1.0) -> dict:
+        """
+        Speaks text via the Android native TTS engine through Termux:API.
+        Falls back gracefully on non-Android platforms.
+        """
+        if self.is_android and shutil.which("termux-tts-speak"):
+            result = _termux_cmd(["termux-tts-speak", "-r", str(rate), text], timeout=30)
+            return {"success": result["success"], "platform": "android"}
+        return {"success": False, "message": "termux-tts-speak not available."}
+
+    def get_cpu_temperature_android(self) -> float | None:
+        """
+        Reads Snapdragon 888 thermal zones directly from sysfs.
+        Checks /sys/class/thermal/thermal_zone*/temp (Android kernel sysfs).
+        Returns the highest reading in Celsius, or None if unreadable.
+        """
+        if not self.is_android:
+            return None
+        try:
+            thermal_root = Path("/sys/class/thermal")
+            temps = []
+            for zone in thermal_root.glob("thermal_zone*/temp"):
+                try:
+                    raw = zone.read_text().strip()
+                    if raw.isdigit():
+                        c = int(raw) / 1000.0
+                        if 10 < c < 125:
+                            temps.append(c)
+                except Exception:
+                    continue
+            return max(temps) if temps else None
+        except Exception:
+            return None
+
+    def apply_snapdragon_thermal_safeguard(self) -> dict:
+        """
+        Applies conservative CPU governor and charge-current limits on
+        Snapdragon 888 to avoid thermal throttle during 24/7 operation.
+        Returns a status dict.
+        """
+        actions = []
+        if not self.is_android:
+            return {"success": False, "message": "Android-only safeguard."}
+
+        # 1. Switch CPU governor to schedutil (Snapdragon's preferred power-aware gov)
+        for cpu in Path("/sys/devices/system/cpu").glob("cpu[0-9]*/cpufreq/scaling_governor"):
+            try:
+                cpu.write_text("schedutil")
+                actions.append(f"Governor → schedutil ({cpu.parent.parent.name})")
+            except Exception:
+                # Requires root; silently skip
+                pass
+
+        # 2. Cap charge current
+        charge_node = Path("/sys/class/power_supply/battery/constant_charge_current_max")
+        if charge_node.exists() and os.access(charge_node, os.W_OK):
+            try:
+                charge_node.write_text("2500000")
+                actions.append("Charge current capped at 2500 mA")
+            except Exception:
+                actions.append("Charge current cap: permission denied (needs root)")
+        else:
+            actions.append("Charge current cap: sysfs node not writable")
+
+        return {
+            "success": True,
+            "actions": actions,
+            "note": "Some governor changes require root; non-root actions applied."
+        }
+
+    # =========================================================================
+    # Cross-platform get_system_health — enhanced with Android path
+    # =========================================================================
+
+    def get_system_health(self) -> dict:
+        """
+        Gathers comprehensive CPU, RAM, Disk, Process, and Battery diagnostics.
+        On Android, enriches battery data via termux-battery-status and reads
+        Snapdragon thermal zones directly from sysfs.
+        """
+        cpu_pct = psutil.cpu_percent(interval=0.2)
+        ram = psutil.virtual_memory()
+
+        # Disk — Android Termux home
+        disk_path = str(Path.home()) if self.is_android else "/"
+        try:
+            disk = psutil.disk_usage(disk_path)
+            disk_free_gb = round(disk.free / (1024**3), 1)
+        except Exception:
+            disk_free_gb = -1.0
+
+        # Battery — unified via get_battery_status()
+        battery = self.get_battery_status()
+
+        # Top 3 CPU processes
+        top_procs = []
+        try:
+            for p in sorted(psutil.process_iter(['name', 'cpu_percent', 'memory_percent']),
+                            key=lambda p: p.info.get('cpu_percent', 0) or 0,
+                            reverse=True)[:4]:
+                name = p.info.get('name')
+                cpu = p.info.get('cpu_percent')
+                mem = p.info.get('memory_percent')
+                if name and cpu is not None and mem is not None:
+                    top_procs.append(f"{name} (CPU: {cpu:.1f}%, RAM: {mem:.1f}%)")
+        except Exception:
+            pass
+
+        swap = psutil.swap_memory()
+
+        # Uptime
+        uptime_sec = int(time.time() - psutil.boot_time())
+        hours = uptime_sec // 3600
+        mins = (uptime_sec % 3600) // 60
+        uptime_str = f"{hours}h {mins}m"
+
+        # CPU Temperature — Android sysfs first, then heartbeat fallback
+        cpu_temp = None
+        if self.is_android:
+            cpu_temp = self.get_cpu_temperature_android()
+        if cpu_temp is None:
+            try:
+                from engine.heartbeat import heartbeat_engine
+                cpu_temp = heartbeat_engine.get_cpu_temperature()
+            except Exception:
+                pass
+
+        # Network ping
+        ping_ok = True
+        try:
+            param = "-n 1" if self.os_type == "win32" else "-c 1"
+            res = subprocess.run(f"ping {param} 8.8.8.8", shell=True, capture_output=True, timeout=2)
+            ping_ok = (res.returncode == 0)
+        except Exception:
+            ping_ok = False
+
+        return {
+            "cpu_percent": cpu_pct,
+            "cpu_temp": cpu_temp,
+            "ram_total_gb": round(ram.total / (1024**3), 1),
+            "ram_used_gb": round(ram.used / (1024**3), 1),
+            "ram_percent": ram.percent,
+            "swap_used_mb": round(swap.used / (1024**2), 1),
+            "swap_total_mb": round(swap.total / (1024**2), 1),
+            "swap_percent": swap.percent,
+            "disk_free_gb": disk_free_gb,
+            "uptime": uptime_str,
+            "battery": battery,
+            "top_processes": top_procs,
+            "internet_connected": ping_ok,
+            "platform": "android" if self.is_android else self.os_type,
+        }
+
+    def troubleshoot(self) -> str:
+        """
+        Analyzes system metrics and returns an actionable diagnosis.
+        """
+        health = self.get_system_health()
+        issues = []
+        advice = []
+
+        if health["cpu_percent"] > 85:
+            issues.append(f"High CPU load: {health['cpu_percent']}%")
+            if health["top_processes"]:
+                advice.append(f"Heavy processes: {', '.join(health['top_processes'][:2])}")
+
+        if health["ram_percent"] > 85:
+            issues.append(f"RAM memory bottleneck: {health['ram_percent']}% used ({health['ram_used_gb']}GB / {health['ram_total_gb']}GB)")
+            advice.append("Consider closing background tabs or heavy apps.")
+
+        if not health["internet_connected"]:
+            issues.append("No internet connection detected (ping to 8.8.8.8 failed).")
+            advice.append("Check your Wi-Fi or router settings.")
+
+        if health["disk_free_gb"] != -1.0 and health["disk_free_gb"] < 5.0:
+            issues.append(f"Low disk storage: only {health['disk_free_gb']}GB remaining.")
+            advice.append("Run 'organize files' or clear temporary files.")
+
+        batt = health.get("battery", {})
+        if batt and batt.get("temperature_c") and batt["temperature_c"] > 42:
+            issues.append(f"Battery temperature high: {batt['temperature_c']}°C (Snapdragon 888 comfort limit: 42°C)")
+            advice.append("Let device cool down. Avoid charging under heavy load.")
+
+        if not issues:
+            return (
+                f"Your device is running smoothly! CPU is at {health['cpu_percent']}%, "
+                f"RAM usage is {health['ram_percent']}% ({health['ram_used_gb']}GB used), "
+                f"and internet connectivity is healthy."
+            )
+        else:
+            return f"Found {len(issues)} issues: " + " | ".join(issues) + ". " + " ".join(advice)
+
 
 system_controller = SystemController()
 

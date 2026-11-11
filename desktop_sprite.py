@@ -29,8 +29,9 @@ if IS_WINDOWS:
     user32 = ctypes.windll.user32
 
 SPRITE_DIR = Path(__file__).resolve().parent / "assets" / "sprites" / "zia_anime"
-SPRITE_SIZE = (260, 260)
+SPRITE_SIZE = (150, 270)  # Full-body anime girl portrait proportion
 KEY_COLOR = "#000001"  # Pure transparent key color for Windows
+FRAME_DELAY_MS = 42    # Strict 24 FPS timing (1000 / 24 = 41.67ms)
 
 class DesktopSpriteCompanion:
     def __init__(self, always_visible: bool = False):
@@ -45,9 +46,9 @@ class DesktopSpriteCompanion:
         self.screen_w = self.root.winfo_screenwidth()
         self.screen_h = self.root.winfo_screenheight()
 
-        # Initial position: bottom right corner above taskbar
-        self.win_w = SPRITE_SIZE[0]
-        self.win_h = SPRITE_SIZE[1] + 60 # Extra space for speech bubble
+        # Initial position: bottom right corner above taskbar (tiny footprint, full body)
+        self.win_w = SPRITE_SIZE[0] + 30
+        self.win_h = SPRITE_SIZE[1] + 65  # Extra room for speech bubble above head
         self.pos_x = self.screen_w - self.win_w - 40
         self.pos_y = self.screen_h - self.win_h - 50
         self.root.geometry(f"{self.win_w}x{self.win_h}+{self.pos_x}+{self.pos_y}")
@@ -85,7 +86,7 @@ class DesktopSpriteCompanion:
         # Blinking state
         self.blink_state = 0 # 0=open, 1=half, 2=blink, 3=half
         self.blink_timer = 0
-        self.next_blink_tick = 60 # ~2 seconds
+        self.next_blink_tick = 50 # ~2 seconds at 24 FPS
 
         # Talking state
         self.is_speaking = False
@@ -103,10 +104,10 @@ class DesktopSpriteCompanion:
         self.current_emotion_frame = None
         self.emotion_reset_tick = 0
 
-        # Canvas Image Item
+        # Canvas Image Item (anchored neatly below the speech bubble area)
         self.sprite_canvas_item = self.canvas.create_image(
             self.win_w // 2,
-            self.win_h - (SPRITE_SIZE[1] // 2),
+            self.win_h - (SPRITE_SIZE[1] // 2) - 4,
             image=self.frames.get("idle_open")
         )
 
@@ -114,8 +115,8 @@ class DesktopSpriteCompanion:
         self.is_active = True
         self.main_window_minimized = False
 
-        # Start loops
-        self.root.after(33, self.animation_tick) # ~30-40 FPS
+        # Start loops (24 FPS smooth lock)
+        self.root.after(FRAME_DELAY_MS, self.animation_tick)
         self.start_window_monitor_thread()
         self.start_websocket_listener_thread()
 
@@ -190,14 +191,14 @@ class DesktopSpriteCompanion:
             self.set_frame(self.current_emotion_frame)
 
         if self.current_emotion_frame and self.current_mood != "F11":
-            self.emotion_reset_tick = self.tick_counter + int(duration * 30)
+            self.emotion_reset_tick = self.tick_counter + int(duration * 24)
 
     def trigger_speech(self, text: str, duration: float = 3.5):
         """Displays dialogue speech bubble and activates lip-syncing."""
         self.speech_text = text
         self.is_speaking = True
         self.current_state = "talking"
-        self.speech_clear_tick = self.tick_counter + int(duration * 30)
+        self.speech_clear_tick = self.tick_counter + int(duration * 24)
 
         # Draw cute speech bubble
         self.render_speech_bubble(text)
@@ -212,10 +213,10 @@ class DesktopSpriteCompanion:
         if not text:
             return
 
-        bubble_w = min(240, max(120, len(text) * 7 + 24))
+        bubble_w = min(self.win_w - 12, max(110, len(text) * 7 + 20))
         bubble_h = 42
         bx1 = (self.win_w - bubble_w) // 2
-        by1 = 8
+        by1 = 6
         bx2 = bx1 + bubble_w
         by2 = by1 + bubble_h
 
@@ -227,7 +228,7 @@ class DesktopSpriteCompanion:
             bx2, by2 - 10,
             bx2 - 10, by2,
             bx1 + (bubble_w // 2) + 6, by2,
-            bx1 + (bubble_w // 2), by2 + 10, # tail pointing down
+            bx1 + (bubble_w // 2), by2 + 8, # tail pointing down towards head
             bx1 + (bubble_w // 2) - 6, by2,
             bx1 + 10, by2,
             bx1, by2 - 10,
@@ -264,7 +265,7 @@ class DesktopSpriteCompanion:
             self.root.after(120, lambda: self.set_frame(self.current_emotion_frame or "idle_open"))
 
     # =========================================================================
-    # Animation Tick Loop (~30 FPS)
+    # Animation Tick Loop (Strict 24 FPS)
     # =========================================================================
     def animation_tick(self):
         self.tick_counter += 1
@@ -284,7 +285,7 @@ class DesktopSpriteCompanion:
         # State 1: Talking (Smooth Syllabic Cadence, No Flapping Glitch)
         if self.is_speaking:
             talk_cycle = ["talk_half", "talk_open", "talk_half", "talk_smile"]
-            idx = (self.tick_counter // 4) % len(talk_cycle)
+            idx = (self.tick_counter // 3) % len(talk_cycle)
             self.set_frame(talk_cycle[idx])
 
         # State 2: Walking Cycle
@@ -314,9 +315,9 @@ class DesktopSpriteCompanion:
         # State 3: Organic Multi-Frequency Idle Breathing, Gaze Sway & Blinking Loop
         else:
             # Random Stroll Decision (every ~10-15 seconds)
-            if self.tick_counter % 300 == 0 and random.random() < 0.40:
+            if self.tick_counter % 260 == 0 and random.random() < 0.40:
                 self.start_random_walk()
-                self.root.after(33, self.animation_tick)
+                self.root.after(FRAME_DELAY_MS, self.animation_tick)
                 return
 
             # Blinking cycle
@@ -325,34 +326,34 @@ class DesktopSpriteCompanion:
                 blink_subtick = self.tick_counter - self.next_blink_tick
                 if blink_subtick < 2:
                     self.set_frame("idle_half")
-                elif blink_subtick < 6:
+                elif blink_subtick < 5:
                     self.set_frame("idle_blink")
-                elif blink_subtick < 8:
+                elif blink_subtick < 7:
                     self.set_frame("idle_half")
                 else:
                     self.set_frame(self.current_emotion_frame or "idle_open")
                     # Schedule next blink (natural 20% double-blink chance)
                     is_double = random.random() < 0.20
-                    delay = 18 if is_double else random.randint(80, 180)
+                    delay = 14 if is_double else random.randint(60, 140)
                     self.next_blink_tick = self.tick_counter + delay
             else:
                 # Occasional playful wink (~10% chance)
-                if self.tick_counter % 420 == 120 and random.random() < 0.30:
+                if self.tick_counter % 360 == 100 and random.random() < 0.30:
                     self.set_frame("idle_wink")
-                elif self.tick_counter % 420 == 134:
+                elif self.tick_counter % 360 == 112:
                     self.set_frame(self.current_emotion_frame or "idle_open")
                 else:
                     # Multi-frequency organic breathing and gentle lateral sway
-                    breath_y = math.sin(self.tick_counter * 0.04) * 2.8 + math.cos(self.tick_counter * 0.02) * 1.0
-                    sway_x = math.cos(self.tick_counter * 0.025) * 1.5
+                    breath_y = math.sin(self.tick_counter * 0.05) * 2.2 + math.cos(self.tick_counter * 0.025) * 0.8
+                    sway_x = math.cos(self.tick_counter * 0.03) * 1.2
                     self.canvas.coords(
                         self.sprite_canvas_item,
                         (self.win_w // 2) + sway_x,
-                        self.win_h - (SPRITE_SIZE[1] // 2) + breath_y
+                        self.win_h - (SPRITE_SIZE[1] // 2) - 4 + breath_y
                     )
                     self.set_frame(self.current_emotion_frame or "idle_open")
 
-        self.root.after(33, self.animation_tick)
+        self.root.after(FRAME_DELAY_MS, self.animation_tick)
 
     def start_random_walk(self):
         """Picks a random destination along the bottom of the screen to stroll towards."""

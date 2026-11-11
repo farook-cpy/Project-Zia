@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test cache
+tests/__pycache__/
+engine/__pycache__/
+
+# OS artifacts
+Thumbs.db
+.DS_Store
+
+# Local temporary editor files
+*.swp
+*.swo

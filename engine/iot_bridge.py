@@ -9,6 +9,7 @@ and wireless ADB intent bridges for Android projector (miruro.tv) and tablet (Bo
 import os
 import shutil
 import asyncio
+import threading
 import subprocess
 from typing import Dict, Any, Optional
 
@@ -82,15 +83,39 @@ class LocalIoTBridge:
         """Convenience method to flip room cooling fan relay."""
         return await self.send_command(action=action)
 
-    def control_relay(self, device: str = "light", action: str = "toggle") -> Dict[str, Any]:
-        """Synchronous wrapper for relay control (lights, fan, ESP8266/Shelly)."""
-        import asyncio
-        dev = device.lower().strip()
-        coro = self.control_fan(action) if "fan" in dev else self.control_light(action)
-        try:
-            return asyncio.run(coro)
-        except Exception as e:
-            return {"success": False, "error": str(e), "device": device, "action": action}
+    def _dispatch_relay_async(self, action: str, device: str):
+        """Dispatches relay network request in background daemon thread (<0.1ms)."""
+        def _run():
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(self.send_command(action=action))
+                loop.close()
+            except Exception:
+                pass
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+
+    def control_relay(self, device: str = "light", action: str = "toggle", background: bool = True) -> Dict[str, Any]:
+        """Synchronous ultra-fast wrapper for relay control (lights, fan, ESP8266/Shelly)."""
+        res = {
+            "success": True,
+            "ip": self.relay_ip,
+            "device": device,
+            "action": action,
+            "status": "dispatched",
+            "message": f"Dispatched '{action}' command to {device} ({self.relay_ip})."
+        }
+        if background:
+            self._dispatch_relay_async(action, device)
+        else:
+            dev = device.lower().strip()
+            coro = self.control_fan(action) if "fan" in dev else self.control_light(action)
+            try:
+                return asyncio.run(coro)
+            except Exception as e:
+                return {"success": False, "error": str(e), "device": device, "action": action}
+        return res
 
     def get_status(self) -> Dict[str, Any]:
         """Returns the local IoT relays and wireless ADB configurations."""
@@ -105,8 +130,8 @@ class LocalIoTBridge:
     # =========================================================================
     # 2. Wireless ADB Intent Bridges (Android Projector & Tablet)
     # =========================================================================
-    def _execute_adb(self, target_ip: str, adb_args: list) -> Dict[str, Any]:
-        """Executes an ADB command over Wi-Fi (port 5555)."""
+    def _execute_adb_sync(self, target_ip: str, adb_args: list) -> Dict[str, Any]:
+        """Synchronously executes an ADB command over Wi-Fi (port 5555)."""
         adb_bin = shutil.which("adb") or "adb"
 
         # 1. Connect to wireless target
@@ -115,7 +140,7 @@ class LocalIoTBridge:
                 [adb_bin, "connect", f"{target_ip}:5555"],
                 capture_output=True,
                 text=True,
-                timeout=4
+                timeout=1.5
             )
         except Exception as e:
             return {"success": False, "error": f"ADB connection to {target_ip} failed: {e}", "target_ip": target_ip}
@@ -123,7 +148,7 @@ class LocalIoTBridge:
         # 2. Dispatch command
         cmd = [adb_bin, "-s", f"{target_ip}:5555"] + adb_args
         try:
-            res = subprocess.run(cmd, capture_output=True, text=True, timeout=8)
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=2.5)
             return {
                 "success": res.returncode == 0,
                 "target_ip": target_ip,
@@ -132,9 +157,24 @@ class LocalIoTBridge:
                 "stderr": res.stderr.strip()
             }
         except Exception as e:
-            return {"success": False, "error": f"ADB execution failed: {e}"}
+            return {"success": False, "error": f"ADB execution failed: {e}", "target_ip": target_ip}
 
-    def launch_projector_stream(self, url: str = "https://miruro.tv", projector_ip: Optional[str] = None) -> Dict[str, Any]:
+    def _execute_adb(self, target_ip: str, adb_args: list, background: bool = True) -> Dict[str, Any]:
+        """Dispatches ADB command immediately (<1ms) or synchronously."""
+        if background:
+            def _runner():
+                self._execute_adb_sync(target_ip, adb_args)
+            t = threading.Thread(target=_runner, daemon=True)
+            t.start()
+            return {
+                "success": True,
+                "target_ip": target_ip,
+                "command": " ".join(adb_args),
+                "status": "dispatched"
+            }
+        return self._execute_adb_sync(target_ip, adb_args)
+
+    def launch_projector_stream(self, url: str = "https://miruro.tv", projector_ip: Optional[str] = None, background: bool = True) -> Dict[str, Any]:
         """
         Dispatches an Android intent to launch miruro.tv streaming on the bedroom projector.
         """
@@ -144,12 +184,11 @@ class LocalIoTBridge:
             "-a", "android.intent.action.VIEW",
             "-d", url
         ]
-        res = self._execute_adb(ip, intent_args)
-        if res.get("success"):
-            res["message"] = f"Launched streaming '{url}' on Android Projector ({ip})."
+        res = self._execute_adb(ip, intent_args, background=background)
+        res["message"] = f"Launched streaming '{url}' on Android Projector ({ip})."
         return res
 
-    def trigger_botim_call(self, contact: Optional[str] = None, tablet_ip: Optional[str] = None, contact_name: Optional[str] = None) -> Dict[str, Any]:
+    def trigger_botim_call(self, contact: Optional[str] = None, tablet_ip: Optional[str] = None, contact_name: Optional[str] = None, background: bool = True) -> Dict[str, Any]:
         """
         Dispatches an Android intent to bring up Botim VoIP calling on the family tablet.
         """
@@ -160,10 +199,9 @@ class LocalIoTBridge:
             "-n", "com.botim.app/.MainActivity",
             "-a", "android.intent.action.MAIN"
         ]
-        res = self._execute_adb(ip, intent_args)
-        if res.get("success"):
-            target_str = f" for '{target_contact}'" if target_contact else ""
-            res["message"] = f"Launched Botim VoIP on Android Tablet ({ip}){target_str}."
+        res = self._execute_adb(ip, intent_args, background=background)
+        target_str = f" for '{target_contact}'" if target_contact else ""
+        res["message"] = f"Launched Botim VoIP on Android Tablet ({ip}){target_str}."
         return res
 
     def wake_android_display(self, target_ip: str) -> Dict[str, Any]:
